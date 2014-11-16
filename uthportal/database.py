@@ -49,8 +49,8 @@ class IDatabaseManager(object):
 
 class MongoDatabaseManager(IDatabaseManager):
 
-    def __init(self, **kargs):
-        super(MongoDatabaseManager, self).__init__(self, **kargs)
+    def __init__(self, **kargs):
+        super(MongoDatabaseManager, self).__init__(**kargs)
 
     def connect(self, *args, **kargs):
         self.client = None
