@@ -7,12 +7,12 @@ logging.basicConfig(level=logging.DEBUG)
 
 def main():
     manager = MongoDatabaseManager(host='localhost', port=27017)
-    if manager.connect():
-        print("\t Module test successful")
-    else :
-        print("Module failed!")
+    result = manager.connect()
 
-    manager.disconnect()
+    if result:
+        manager.disconnect()
+
+    return result
 
 if __name__ == '__main__':
     main()

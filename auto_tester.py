@@ -1,6 +1,7 @@
 import sys
 from pkgutil import iter_modules
 from importlib import import_module
+TEST_PACKAGE = 'test'
 
 def explore_package(package_name):
     """
@@ -9,11 +10,12 @@ def explore_package(package_name):
     return [name for x, name, y in iter_modules([package_name])]
 
 def main():
-    modules = explore_package('test')
-    #Import each module and extract it's main function, the call it.
+    modules = explore_package(TEST_PACKAGE)
+
+    #Import each module and extract it's main function, then call it.
     for i, module in enumerate(modules):
-        print("[%s]: Testing module %s" % (i, module))
-        imported_module = import_module("test." + module)
+        print("[%s]: Running test: [ %s ]..." % (i, module))
+        imported_module = import_module("%s.%s" % (TEST_PACKAGE,module) )
 
         if imported_module is None:
             print("Cannot import module")
@@ -22,14 +24,14 @@ def main():
         imported_main = getattr(imported_module, 'main')
 
         if imported_module is None:
-            print("Module %s doesn't contain a main function" % str(module))
+            print("ERROR: Module %s doesn't contain a main function" % str(module))
             continue
 
-        imported_main()
+        if imported_main() :
+            print("\tSuccess!")
+        else :
+            print(" \tFailure")
 
 if __name__ == "__main__":
     main()
-
-
-
 
