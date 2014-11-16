@@ -2,6 +2,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 
 from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
 
 logger = logging.getLogger(__name__)
 
