@@ -1,7 +1,5 @@
-import sys
 
 import logging
-
 from abc import ABCMeta, abstractmethod
 
 from pymongo import MongoClient
@@ -57,6 +55,8 @@ class MongoDatabaseManager(IDatabaseManager):
         super(MongoDatabaseManager, self).__init__(**kargs)
 
     def connect(self, *args, **kargs):
+        self.client = None
+
         try:
             self.client = MongoClient(
                     host=self.info['host'],
@@ -64,31 +64,28 @@ class MongoDatabaseManager(IDatabaseManager):
                     *args, **kargs)
 
         except ConnectionFailure:
-            logger.error('Cannot connect to database (%s, %s)' % (self.info['host'], self.info['port']))
-            return False
-
+            logger.error('ConnectionFailure: Cannot connect to database (%s, %s)' % (self.info['host'], self.info['port']))
         except KeyError:
-            logger.error('Key not found in info! Host=%s, Port=%s' % (self.info['host'], self.info['port']))
-            return False
-
+            logger.error('KeyError: Check arguments host & port arguments')
         except TypeError:
-            logger.error('Maybe port is NOT (int)? type(port)=%s' % str(type(self.info['port'])))
-            return False
-
+            logger.error('TypeError: Maybe port is NOT (int)? type(port)=%s' % str(type(self.info['port'])))
         except Exception as ex:
             logger.error(ex.message)
-            return False
 
         # Perform self-check
-        if not self.client.alive():
-            logger.error('MongoDB client is NOT alive! (%s, %s)' % (self.info['host'], self.info['port']))
-        else:
-            logger.debug('Connected to MongoDB successfully!')
+        if not self.client:
+            logger.error('Connection to MongoDB was unsuccessfull')
+            return False
 
-        return self.client.alive()
+        logger.debug('Connected to MongoDB successfully!')
+        return True
 
     def disconnect(self):
         """ No need to close connections. This is handled by pymongo! """
+        if not self.client:
+            logger.warning('Trying to disconnect from a non-connected mongodb client')
+            return
+
         self.client.disconnect()
 
     def insert_document(self, collection, document, **kargs):
