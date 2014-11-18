@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 from pkgutil import iter_modules
 from importlib import import_module

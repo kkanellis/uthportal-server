@@ -1,7 +1,6 @@
 import sys
 
 import logging
-logging.basicConfig()
 
 from abc import ABCMeta, abstractmethod
 
@@ -66,19 +65,19 @@ class MongoDatabaseManager(IDatabaseManager):
 
         except ConnectionFailure:
             logger.error('Cannot connect to database (%s, %s)' % (self.info['host'], self.info['port']))
-            sys.exit(-1)
+            return False
 
         except KeyError:
             logger.error('Key not found in info! Host=%s, Port=%s' % (self.info['host'], self.info['port']))
-            sys.exit(-1)
+            return False
 
         except TypeError:
             logger.error('Maybe port is NOT (int)? type(port)=%s' % str(type(self.info['port'])))
-            sys.exit(-1)
+            return False
 
         except Exception as ex:
             logger.error(ex.message)
-            sys.exit(-1)
+            return False
 
         # Perform self-check
         if not self.client.alive():
