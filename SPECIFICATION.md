@@ -2,8 +2,8 @@
 
 19 December 2014 - ...
 
-**Version**:  N/A
-**Last Updated** : 23 Dec 2014
+**Version**:  N/A Draft
+**Last Updated** : 24 Dec 2014
 
 ## Developer Team
 **Konstantinos Kanellis**  <<kkanelli@hotmail.com>>
@@ -95,14 +95,71 @@ When a task is created, all info stored in database are loaded in RAM into a dic
 
 ## Control  Flow
 
+### Update Procedure 
+
+In the *BaseTask* abstract class, from which all other (specific) tasks inherit, is defined the **update** method which is executed when the queue says so. The basic steps are:
+
 - Fetch the data from the web
 - Parse/filter/edit the data accordingly
 - Compare the saved data with the new data
 	- IF they differ **notify** all clients subscribed, **move to history** the old - *saved*- data and **update** the database with the new data.
 
+If any of these steps fail, then the procedure is **re-executed** a number of times defined.
 
 ## Database Model
 
+UTHPortal uses **[MongoDB](http://www.mongodb.org/)**, which is a *document-oriented database* . Thus, the database is organized with a plethora of *collection* each one containing a number *documents*. Each document is saved in a format similar to *BSON*, with some extra additions. 
+
+### Web Sources
+
+The data gathered from the web, are classified according to their origin (web-sources) and their is an **one-to-one relation** between a collection and the according web-source. The majority of the collections follow the schema below:
+
+	[prefix].[department].[info_type]
+
+For example the collection that holds the courses information from the *informatics* (inf) department is named:
+
+	[prefix].inf.courses
+
+Notice that prefix thing is still there. This prefix thing is used to distinguish the purpose of these collections and can take the following values:
+
+- **curr**: latest data/info available & possible login info needed to access the web-source (?? like undergraduates announcements inf) 
+- **hist**: history of all changes
+- **push**: holds the *clients* who are subscribed to this web-source
+- **web**: client-ready document to be served (data which are useless to client have been removed)
+
+Note that the **curr** and **web** collections hold one document each (??)
+
+### Push notifications
+
 ## Interfaces 
 
+The interfaces defined in UTHPortal are:
 
+- **IDatabaseManager**: responsible for database operations
+- **INoficationManager**: responsible for *client* notification
+- ...
+
+### IDatabaseManager
+
+**IDatabaseManager** is a interface which is implemented using **[singleton](http://en.wikipedia.org/wiki/Singleton_pattern)** pattern, since all major databases support asynchronous operations (included the *MongoDB* used in this project with the support of **gevent**). This interface along with its implementations are stored in *database.py* module.
+
+When initializing an IDatabaseManager instance, it is necessary to provide a dictionary, named *info*, with the specific keys:
+
+- **host**: string which contains the connection string
+- **port**: integer which specifies the connection port
+- **db_name**: string which specifies the database name which will be used by the interface
+
+Required methods for IDatabaseManager are the following:
+
+-  **connect**
+- **disconnect**
+- **insert_document**
+- **remove_document**
+- **find_document**
+- **update_document**
+
+The main implementation of the interface above is the **MongoDatabaseManager**, since *MongoDB* is used throughout the project.
+
+### INotificationManager
+
+**To be defined**
