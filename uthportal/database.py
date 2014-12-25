@@ -3,23 +3,23 @@ import logging
 from abc import ABCMeta, abstractmethod
 
 from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure
+from pymongo.errors import ConnectionFailure, OperationFailure
 
 logger = logging.getLogger(__name__)
 
 class IDatabaseManager(object):
     __metaclass__ = ABCMeta
 
-    def __init__ (self, **kargs):
+    def __init__ (self, **kwargs):
         """ info: dictionary of arguments
 
         Neccessary keys are: host, port & db_name .
         TODO: Maybe use named arguments or get with default values?
         """
-        self.info = kargs
+        self.info = kwargs
 
     @abstractmethod
-    def connect(self, *args, **kargs):
+    def connect(self, *args, **kwargs):
         """ Connect to database. Returns boolean if it was successfull. """
         return
 
@@ -29,39 +29,43 @@ class IDatabaseManager(object):
         return
 
     @abstractmethod
-    def insert_document(self, collection, document, **kargs):
+    def insert_document(self, collection, document, **kwargs):
         """ Inserts an entry/document to a table/collection. """
         return
 
     @abstractmethod
-    def remove_document(self, collection, document, **kargs):
+    def remove_document(self, collection, query, **kwargs):
         """ Deletes an entry/document from a table/collection. """
         return
 
     @abstractmethod
-    def find_document(self, collection, query, **kargs):
+    def find_document(self, collection, query, **kwargs):
         """ Finds and returns the entry/document from a table/collection. """
         return
 
     @abstractmethod
-    def update_document(self, collection, query, document, **kargs):
+    def update_document(self, collection, query, document, **kwargs):
         """ Updates an existing document with new data """
         return
 
 
 class MongoDatabaseManager(IDatabaseManager):
 
-    def __init__(self, **kargs):
-        super(MongoDatabaseManager, self).__init__(**kargs)
+    def __init__(self, **kwargs):
+        super(MongoDatabaseManager, self).__init__(**kwargs)
 
-    def connect(self, *args, **kargs):
+
+    def connect(self, *args, **kwargs):
         self.client = None
 
         try:
             self.client = MongoClient(
                     host=self.info['host'],
                     port=self.info['port'],
-                    *args, **kargs)
+                    *args, **kwargs)
+
+            # Store the database
+            self.db = self.client['db_name']
 
         except ConnectionFailure:
             logger.error('ConnectionFailure: Cannot connect to database (%s, %s)' % (self.info['host'], self.info['port']))
@@ -80,6 +84,7 @@ class MongoDatabaseManager(IDatabaseManager):
         logger.debug('Connected to MongoDB successfully!')
         return True
 
+
     def disconnect(self):
         """ No need to close connections. This is handled by pymongo! """
         if not self.client:
@@ -88,15 +93,64 @@ class MongoDatabaseManager(IDatabaseManager):
 
         self.client.disconnect()
 
-    def insert_document(self, collection, document, **kargs):
-        pass
 
-    def remove_document(self, collection, document, **kargs):
-        pass
+    def insert_document(self, collection, document, **kwargs):
+        if not self.client:
+            logger.error('No active DB connection! Cannot perform an insertion')
+            return
 
-    def find_document(self, collection, query, **kargs):
-        pass
+        try:
+            self.db[collection].insert(document, **kwargs)
+        except OperationFailure:
+            logger.error('OperationFailure: Cannot insert a document into "%s"' % collection)
+            return False
 
-    def update_document(self, collection, query, document, **kargs):
-        pass
+        return True
+
+
+    def remove_document(self, collection, query, **kwargs):
+        if not self.client:
+            logger.error('No active DB connection! Cannot perform a deletion')
+            return
+
+        try:
+            self.db[collection].remove(query, **kwargs)
+        except OperationFailure:
+            logger.error('OperationFailure: Cannot remove a document into "%s"' % collection)
+            return False
+
+        return True
+
+
+    def find_document(self, collection, query, **kwargs):
+        if not self.client:
+            logger.error('No active DB connection! Cannot perform a search')
+            return
+
+        # Since we are interested in one document, find_one is used.
+
+        try:
+            document = self.db[collection].find(query, **kwargs)
+        except OperationFailure:
+            logger.error('OperationFailure: Cannot find a document into "%s"' % collection)
+            return None
+
+        return document
+
+
+    def update_document(self, collection, query, document, **kwargs):
+        if not self.client:
+            logger.error('No active DB connection! Cannot perform a deletion')
+            return
+
+        try:
+            self.db[collection].update(query, document, **kwargs)
+        except OperationFailure:
+            logger.error('OperationFailure: Cannot remove a document into "%s"' % collection)
+            return False
+        except TypeError:
+            logger.error('TypeError: Check document(dict) & upsert(bool)')
+            return False
+
+        return True
 
