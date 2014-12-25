@@ -42,9 +42,9 @@ UTHPortal is written in **Python 2.7+** language. It makes use of the following 
 
 It consists of three main components:
 
-1. **Gatherer** which is responsible for fetching, filtering and saving data *scrapped* from specific web sources.
-2. **Webserver** which provides the **RESTful** interface between the server-side and the client-side (**mobile application**). 
-3. **Notifier** which is responsible for **sending push notifications** to the client when *new* data is available, in order to inform the student.
+1. **Gatherer**, which is responsible for fetching, filtering and saving data *scrapped* from specific web sources.
+2. **Web-server**, which provides the **RESTful** interface between the server-side and the client-side (**mobile application**). 
+3. **Notifier**, which is responsible for **sending push notifications** to the client when *new* data is available.
 
 ### Structure/Template
 
@@ -91,28 +91,28 @@ Gatherer is a **class** which is initialized in *start.py* module. Gatherer defi
 	- **Type**: Type of task (to initialize the proper class)
 	- **Interval**: Time in secs
 
-When a task is created, all info stored in database are loaded in RAM into a dictionary. Then using a unique id, which depends on the task, the necessary methods of the task (e.g *parse*) are set using methods originated from library folder. Finally the newly created tasks are enqueued to the queue. 
+When a task is created, all info stored in database are loaded in RAM into a dictionary. Then using a *unique id*, which depends on the task, the necessary methods of the task (e.g *parse*) are set using methods originated from the library folder. Finally the newly created tasks are enqueued.
 
 ## Control  Flow
 
 ### Update Procedure 
 
-In the *BaseTask* abstract class, from which all other (specific) tasks inherit, is defined the **update** method which is executed when the queue says so. The basic steps are:
+In the *BaseTask* abstract class, from which all other (specific) tasks inherit, the **update** method which is executed when the queue says so. The basic steps are:
 
 - Fetch the data from the web
 - Parse/filter/edit the data accordingly
 - Compare the saved data with the new data
 	- IF they differ **notify** all clients subscribed, **move to history** the old - *saved*- data and **update** the database with the new data.
 
-If any of these steps fail, then the procedure is **re-executed** a number of times defined.
+If any of these steps fail, then the procedure is **re-executed** a number of times.
 
 ## Database Model
 
-UTHPortal uses **[MongoDB](http://www.mongodb.org/)**, which is a *document-oriented database* . Thus, the database is organized with a plethora of *collection* each one containing a number *documents*. Each document is saved in a format similar to *BSON*, with some extra additions. 
+UTHPortal uses **[MongoDB](http://www.mongodb.org/)**, which is a *document-oriented database* . Thus, the database is organized with a plethora of *collections* each one containing a number of *documents*. Each document is saved in a format similar to *BSON*, with some extra additions. 
 
 ### Web Sources
 
-The data gathered from the web, are classified according to their origin (web-sources) and their is an **one-to-one relation** between a collection and the according web-source. The majority of the collections follow the schema below:
+The data gathered from the web, are classified according to their origin (web-sources) and there is an **one-to-one relation** between a collection and the according web-source. The majority of the collections follow the schema below:
 
 	[prefix].[department].[info_type]
 
@@ -120,14 +120,14 @@ For example the collection that holds the courses information from the *informat
 
 	[prefix].inf.courses
 
-Notice that prefix thing is still there. This prefix thing is used to distinguish the purpose of these collections and can take the following values:
+Notice that the prefix thing is still there. This prefix thing is used to distinguish the purpose of these collections and can take the following values:
 
-- **curr**: latest data/info available & possible login info needed to access the web-source (?? like undergraduates announcements inf) 
+- **curr**: latest data/info available & possible login info needed to access the web-source ((?? like undergraduates announcements inf))
 - **hist**: history of all changes
 - **push**: holds the *clients* who are subscribed to this web-source
-- **web**: client-ready document to be served (data which are useless to client have been removed)
+- **web**: client-ready document to be served - data which are useless to client have been removed -
 
-Note that the **curr** and **web** collections hold one document each (??)
+Note that the **curr** and **web** collections hold one document each ((??))
 
 ### Push notifications
 
@@ -141,13 +141,13 @@ The interfaces defined in UTHPortal are:
 
 ### IDatabaseManager
 
-**IDatabaseManager** is a interface which is implemented using **[singleton](http://en.wikipedia.org/wiki/Singleton_pattern)** pattern, since all major databases support asynchronous operations (included the *MongoDB* used in this project with the support of **gevent**). This interface along with its implementations are stored in *database.py* module.
+**IDatabaseManager** is an interface which is implemented using **[singleton](http://en.wikipedia.org/wiki/Singleton_pattern)** pattern ((?? agree)), since all major databases support asynchronous operations (included the *MongoDB* used in this project with the support of **gevent**). This interface along with its implementations is stored in *database.py* module.
 
 When initializing an IDatabaseManager instance, it is necessary to provide a dictionary, named *info*, with the specific keys:
 
 - **host**: string which contains the connection string
 - **port**: integer which specifies the connection port
-- **db_name**: string which specifies the database name which will be used by the interface
+- **db_name**: string which specifies the database name
 
 Required methods for IDatabaseManager are the following:
 
@@ -158,7 +158,7 @@ Required methods for IDatabaseManager are the following:
 - **find_document**
 - **update_document**
 
-The main implementation of the interface above is the **MongoDatabaseManager**, since *MongoDB* is used throughout the project.
+The main implementation of the interface above is the **MongoDatabaseManager**. Because each implementation may require more arguments than the ones defined in the methods above, we provide a way to pass an arbitrary number of arguments (using \*args and \*\*kwargs). 
 
 ### INotificationManager
 
