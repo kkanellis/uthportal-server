@@ -3,14 +3,14 @@
 19 December 2014 - ...
 
 **Version**:  N/A Draft
-**Last Updated** : 24 Dec 2014
+**Last Updated** : 25 Dec 2014
 
 ## Developer Team
 **Konstantinos Kanellis**  <<kkanelli@hotmail.com>>
-*Electrical & Computer Engineering* undergraduate at *University of Thessaly*
+*Electrical & Computer Engineer* undergraduate at *University of Thessaly*
 
 **George T. Gougoudis** << ... >>
-*Electrical & Computer Engineering* undergraduate at *University of Thessaly*
+*Electrical & Computer Engineer* undergraduate at *University of Thessaly*
 
 ## Project Goal
 **UTHPortal** is a web-application which is targeted to the *students* currently attending at **University of Thessaly**. It's main goal is to provide easy and direct access to the necessary information and services each student needs in order to be informed about the following:
@@ -116,11 +116,29 @@ The data gathered from the web, are classified according to their origin (web-so
 
 	[prefix].[department].[info_type]
 
-For example the collection that holds the courses information from the *informatics* (inf) department is named:
+In the schema above, *info_type* can take the following values for each department:
 
-	[prefix].inf.courses
+- **announce**: announcements
+	-  **announce.academic**: academic news
+	- **announce.events**: department events
+	- **announce.general**: general announcements
+	- **announce.student**: announcements for undergraduates
+- **courses**: department courses
+	- **courses.*course_id***, which depends on the department
+- **schedule**: weekly curriculum for undergraduates
 
-Notice that the prefix thing is still there. This prefix thing is used to distinguish the purpose of these collections and can take the following values:
+There is one exception for the schema above, for **uth** - which is the university - and has **no** *courses* collections. Although it has the following collections besides *announce*:
+
+- **foodmenu**: which is the food menu provided to students
+- ...
+
+**NOTE:** each of the sublist items, share the same *BSON* schema respectively (i.e. *announce.academic* & *announce.general*).
+ 
+For example the collection that holds the courses information from the *informatics* (inf) department for course *ce120* is named:
+
+	[prefix].inf.courses.ce120
+
+Notice that the prefix thing is still there. This is used to distinguish the purpose of these collections and can take the following values:
 
 - **curr**: latest data/info available & possible login info needed to access the web-source ((?? like undergraduates announcements inf))
 - **hist**: history of all changes
@@ -131,7 +149,9 @@ Note that the **curr** and **web** collections hold one document each ((??))
 
 ### Push notifications
 
-## Interfaces 
+**To be defined**
+
+## Interfaces
 
 The interfaces defined in UTHPortal are:
 
@@ -141,7 +161,7 @@ The interfaces defined in UTHPortal are:
 
 ### IDatabaseManager
 
-**IDatabaseManager** is an interface which is implemented using **[singleton](http://en.wikipedia.org/wiki/Singleton_pattern)** pattern ((?? agree)), since all major databases support asynchronous operations (included the *MongoDB* used in this project with the support of **gevent**). This interface along with its implementations is stored in *database.py* module.
+**IDatabaseManager** is an interface which is implemented using **[singleton](http://en.wikipedia.org/wiki/Singleton_pattern)** pattern ((?? agree)), since all major databases support asynchronous operations (including the *MongoDB* used in this project with the support of **gevent**). This interface along with its implementations is stored in *database.py* module.
 
 When initializing an IDatabaseManager instance, it is necessary to provide a dictionary, named *info*, with the specific keys:
 
