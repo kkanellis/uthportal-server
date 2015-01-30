@@ -9,7 +9,7 @@
 **Konstantinos Kanellis**  <<kkanelli@hotmail.com>>
 *Electrical & Computer Engineer* undergraduate at *University of Thessaly*
 
-**George T. Gougoudis** << ... >>
+**George T. Gougoudis** <<george_gougoudis@hotmail.com>>
 *Electrical & Computer Engineer* undergraduate at *University of Thessaly*
 
 ## Project Goal
