@@ -1,0 +1,10 @@
+Database:
+host, port, db_name, username, password
+
+UTHPortal:
+
+refresh_intervals( courses, announcements, food-menu )
+tasks_directory
+
+Loggers:
+
