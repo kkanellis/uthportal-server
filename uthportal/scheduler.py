@@ -23,11 +23,6 @@ from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.base import JobLookupError, ConflictingIdError
 
-import tasks
-import library.inf
-import data.inf
-import data.uth
-
 logger = logging.getLogger(__name__)
 
 class Scheduler(object):
@@ -40,7 +35,7 @@ class Scheduler(object):
         self.tasks = tasks
         self.intervals = interval_dict
 
-        logger.debug('Check tasks paths!')
+        logger.debug('Checking tasks paths!')
         # TODO: Check if paths are valid
         self.init(apscheduler_kwargs)
 
