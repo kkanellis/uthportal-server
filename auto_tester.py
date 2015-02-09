@@ -3,7 +3,7 @@
 import sys
 from pkgutil import iter_modules
 from importlib import import_module
-TEST_PACKAGE = 'test'
+TEST_PACKAGE = 'unit-tests'
 
 def explore_package(package_name):
     """
