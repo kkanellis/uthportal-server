@@ -12,6 +12,10 @@ class BaseTask(object):
         """Fetch a remote document to be parsed later"""
         return
 
+    def update(self, *args, **kwargs):
+        """ Performs the update routine """
+        return
+
     def save(self, *args, **kwargs):
         #TODO: implement
         """Save result dictionary in database"""
@@ -22,11 +26,11 @@ class BaseTask(object):
         """Load old dictionary from database"""
         return
 
-    @abstractmethod
     def __call__(self, *args, **kwargs):
         """This is the method called from the Scheduler when this object is
         next in queue"""
-        return
+
+        update(*args, **kwargs)
 
 
 class CourseTask(BaseTask):
