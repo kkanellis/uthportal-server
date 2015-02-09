@@ -88,7 +88,7 @@ class MongoDatabaseManager(IDatabaseManager):
         # Since we are interested in one document, find_one is used.
 
         try:
-            document = self.db[collection].find(query, **kwargs)
+            document = self.db[collection].find_one(query, **kwargs)
         except OperationFailure:
             logger.error('OperationFailure: Cannot find a document into "%s"' % collection)
             return None
