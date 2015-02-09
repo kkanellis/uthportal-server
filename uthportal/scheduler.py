@@ -21,19 +21,19 @@ import library.inf
 import data.inf
 import data.uth
 
-class Gatherer(object):
-    def __init__(self, database_manager):
+class Scheduler(object):
+    def __init__(self, tasks, apscheduler_kwargs, interval_dict):
         pass
 
-    def setup(self):
+    def add_task(name, func, interval=None):
         pass
 
-    def setup_queue(self):
+    def remove_task(name):
         pass
 
-    def start(self):
+    def init_queue(apscheduler_kwargs, interval_dict):
         pass
 
-    def stop(self):
+    def clear_queue():
         pass
 
