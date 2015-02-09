@@ -11,6 +11,20 @@ class BaseTask(object):
         """Fetch a remote document to be parsed later"""
         return
 
+    @abstractmethod
+    def update(self):
+        """This function is called from __call__"""
+        return
+
+    @abstractmethod
+    def parse(self, document):
+        """Parse the fetced document"""
+        return
+
+    def update(self, *args, **kwargs):
+        """ Performs the update routine """
+        return
+
     def save(self, *args, **kwargs):
         #TODO: implement
         """Save result dictionary in database"""
@@ -21,18 +35,20 @@ class BaseTask(object):
         """Load old dictionary from database"""
         return
 
-    @abstractmethod
-    def update(self):
-        """This function is called from __call__"""
-        return
-
     def __call__(self, *args, **kwargs):
+        """This is the method called from the Scheduler when this object is
+        next in queue"""
+
         self.update()
 
 
 class CourseTask(BaseTask):
     def __init__(self, database_manager):
         super(CourseTask, self).__init__(database_manager)
+
+    def parse(self, document):
+        """Parse the fetced document"""
+        return
 
     def fetch(self, *args, **kwargs):
         #TODO: implement
@@ -49,16 +65,39 @@ class CourseTask(BaseTask):
         """Parse the fetced document"""
         return
 
-
     def postprocess_site(self, *args, **kwargs):
         #TODO: implement
         """Process the document before saving"""
         return
 
 
-    class CourseTask(BaseTask):
-        def __init__(self, database_manager):
-            super(CourseTask, self).__init__(database_manager)
+class AnnouncementTask(BaseTask):
+    def __init__(self, database_manager):
+        super(AnnouncementTask, self).__init__(database_manager)
+
+    def fetch(self, *args, **kwargs):
+        #TODO: implement
+        """Fetch a remote document to be parsed later"""
+        return
+
+    def parse(self, document):
+        """Parse the fetced document"""
+        return
+
+class FoodmenuTask(BaseTask):
+    def __init__(self, database_manager):
+        super(FoodmenuTask, self).__init__(database_manager)
+
+    def fetch(self, *args, **kwargs):
+        #TODO: implement
+        """Fetch a remote document to be parsed later"""
+        return
+
+    def parse(self, document):
+        """Parse the fetced document"""
+        return
+
+
 
 
 
