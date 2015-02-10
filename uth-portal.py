@@ -47,7 +47,6 @@ class UthPortal(object):
 
         self.db_manager = MongoDatabaseManager(host='localhost', port=27017, db_name= 'uthportal')
         self.db_manager.connect()
-        return
 
     def load_tasks(self, package):
         tasks = {}
@@ -84,9 +83,9 @@ class UthPortal(object):
         print tasks
 
     def import_error(self, name):
-        print("Error importing module %s" % name)
+        self.logger.error("Error importing module %s" % name)
         error_type, value, traceback = sys.exc_info()
-        print(traceback)
+        self.logger.error(traceback)
 
     def start_server(self):
         pass
