@@ -10,8 +10,15 @@ logger = logging.getLogger(__name__)
 class MongoDatabaseManager(IDatabaseManager):
 
     def __init__(self, **kwargs):
-        super(MongoDatabaseManager, self).__init__(**kwargs)
+        """
+        Neccessary keys are: host, port & db_name .
+        TODO: Maybe use named arguments or get with default values?
+        """
+        if not all(key in kwargs for key in ('host', 'port', 'db_name')):
+            logger.error('Some necessary kwargs (host, port, db_name) are missing')
+            return
 
+        self.info = kwargs
 
     def connect(self, *args, **kwargs):
         self.client = None

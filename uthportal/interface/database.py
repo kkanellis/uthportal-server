@@ -4,12 +4,7 @@ class IDatabaseManager(object):
     __metaclass__ = ABCMeta
 
     def __init__ (self, **kwargs):
-        """ info: dictionary of arguments
-
-        Neccessary keys are: host, port & db_name .
-        TODO: Maybe use named arguments or get with default values?
-        """
-        self.info = kwargs
+        pass
 
     @abstractmethod
     def connect(self, *args, **kwargs):
