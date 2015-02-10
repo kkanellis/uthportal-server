@@ -121,12 +121,32 @@ class BaseTask(object):
     """ Helper methods """
 
     def __set_document_field(self, document, field, value):
-        pass
+        """ Sets the field (dot notation format) in the provided document """
+        keys = field.split('.')
+        for key in keys[:-1]:
+            if key not in document:
+                logger.warning('[%s] Key "%s" not found in field "%s"' % (self.id, key, field))
+                return
+
+            document = document[key]
+
+        # Set the field
+        document[keys[-1]] = value
 
     def __get_document_field(self, document, field):
-        pass
+        """ Gets the field (dot notation format) in the provided document """
+        keys = fields.split('.')
+        for key in keys[:-1]:
+            if key not in document:
+                logger.warning('[%s] Key "%s" not found in field "%s"' % (self.id, key, field))
+                return
 
+            document = document[key]
 
+        if key[-1] in document:
+            return document[key]
+        else:
+            return None
 
 class CourseTask(BaseTask):
     def __init__(self, path, timeout, database_manager):
