@@ -20,7 +20,7 @@ class BaseTask(object):
         self.database_manager = database_manager
 
         self.id = path.split('.')[-1]
-        self.db_collection = path.split('.')[:-1]
+        self.db_collection = ''.join( path.split('.')[:-1] )
 
     def __call__(self):
         """This is the method called from the Scheduler when this object is
@@ -132,6 +132,7 @@ class BaseTask(object):
 class CourseTask(BaseTask):
     def __init__(self, path, timeout, database_manager):
         super(CourseTask, self).__init__(path, timeout, database_manager)
+
         self.update_fields =[ 'announcements.site', 'announcements.eclass' ]
         self.db_query = { 'code' : self.id }
         self.document = self.load()
