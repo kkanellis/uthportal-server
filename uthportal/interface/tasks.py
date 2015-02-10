@@ -52,24 +52,24 @@ class BaseTask(object):
             new_fields where new data are stored after fecthing procedures. These are compared with the
             current data (stored in self.document)"""
 
-        """ Check if 'new_fields' arg is present """
+        #Check if 'new_fields' arg is present
         if 'new_fields' in kwargs:
             new_fields = kwargs['new_fields']
         else:
             logger.warning('[%s] Update method called without "new_fields" dict' % self.path)
             return
 
-        """ Check if 'new_fields' has the neccessary fields """
+        #Check if 'new_fields' has the neccessary fields
         for field in self.update_fields:
             if field not in new_fields:
                 logger.warning('[%s] Field "%s" not present in "new_fields" dict' % (self.path, field))
                 return
 
-        """ Get self.document's update_fields """
+        #Get self.document's update_fields
         old_fields = { field: self.__get_document_field(self.document, field)
                             for field in self.update_fields }
 
-        """ Checking for differences in the according update_fields """
+        #Checking for differences in the according update_fields """
         differ = False
         for field in self.update_fields:
             if old_fields[field] != new_fields[field]:
@@ -81,11 +81,11 @@ class BaseTask(object):
         if differ:
             self.archive()
 
-            """ Update new fields """
+            #Update new fields """
             for field in self.update_fields:
                 self.__set_document_field(self.document, field, new_fields[field])
 
-            """ Update remaining fields """
+            #Update remaining fields """
             self.__set_document_field(self.document, 'first_updated', now)
             self.__set_document_field(self.document, 'last_updated', now)
 
