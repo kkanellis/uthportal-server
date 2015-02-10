@@ -110,7 +110,6 @@ class BaseTask(object):
 class CourseTask(BaseTask):
     def __init__(self, path, timeout, database_manager):
         super(CourseTask, self).__init__(path, timeout, database_manager)
-
         self.fields = { 'announcements.site', 'announcements.eclass' }
         self.db_query = { 'code' : self.id }
         self.db_document = self.load()

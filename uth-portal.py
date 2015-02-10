@@ -27,15 +27,16 @@ restart()
 from uthportal.logger import get_logger, logging_level
 from uthportal.database import MongoDatabaseManager
 from uthportal.scheduler import Scheduler
+
+from uthportal import library
+from uthportal.library import inf
+
 #from uthportal.server import ....
 import logging
 
 from pkgutil import walk_packages, iter_modules
 from importlib import import_module
 from inspect import getmembers, isclass
-
-from uthportal import library
-from uthportal.library import inf
 
 class UthPortal(object):
     def __init__(self):
@@ -52,6 +53,8 @@ class UthPortal(object):
             current_module = loader.find_module(module).load_module(module)
 
             if (not is_pkg) :
+                instance = None
+                class_name = None
                 #list all classes
                 for name, obj in getmembers(current_module):
                     # class name must be contained in module name e.g.
@@ -60,11 +63,22 @@ class UthPortal(object):
                     # this is to avoid importing interface classes
                     if isclass(obj) and (name in current_module.__name__):
                         self.logger.info('Importing: %s object: %s' %(name, obj))
-                        instance = obj(None) #we should be using db_manager here
+                        class_name = name
+                        instance = obj(current_module.__name__, None, None) #we should be using db_manager here
 
                 modules = module.split('.')
-                #TODO: make the tree
+                current_task = tasks
+                for task in modules:
+                    if task not in current_task:
+                        if task ==  class_name:
+                            current_task[task] = instance
+                        else:
+                            current_task[task] = {}
+                    current_task = current_task[task]
 
+                current_task = instance
+
+        print tasks
 
     def import_error(self, name):
         print("Error importing module %s" % name)
