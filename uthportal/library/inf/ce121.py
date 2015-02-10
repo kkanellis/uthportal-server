@@ -1,4 +1,4 @@
-from uthportal.interfaces.tasks import CourseTask
+from uthportal.interface.tasks import CourseTask
 
 class ce121(CourseTask):
     entry = {
