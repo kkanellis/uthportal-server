@@ -1,11 +1,14 @@
 
-import logging
 from interface.database import IDatabaseManager
 
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, OperationFailure
 
-logger = logging.getLogger(__name__)
+from logger import get_logger, logging_level
+import inspect, logging
+name = inspect.stack()[0][1] #get filename
+
+logger = get_logger(name, logging.DEBUG)
 
 class MongoDatabaseManager(IDatabaseManager):
 
@@ -14,6 +17,8 @@ class MongoDatabaseManager(IDatabaseManager):
         Neccessary keys are: host, port & db_name .
         TODO: Maybe use named arguments or get with default values?
         """
+        self.client = None
+
         if not all(key in kwargs for key in ('host', 'port', 'db_name')):
             logger.error('Some necessary kwargs (host, port, db_name) are missing')
             return

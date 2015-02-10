@@ -44,6 +44,9 @@ class UthPortal(object):
         name = inspect.stack()[0][1] #get filename
 
         self.logger = get_logger(name, logging.DEBUG)
+
+        self.db_manager = MongoDatabaseManager(host='localhost', port=27017, db_name= 'uthportal')
+        self.db_manager.connect()
         return
 
     def load_tasks(self, package):
@@ -64,7 +67,7 @@ class UthPortal(object):
                     if isclass(obj) and (name in current_module.__name__):
                         self.logger.info('Importing: %s object: %s' %(name, obj))
                         class_name = name
-                        instance = obj(current_module.__name__, None, None) #we should be using db_manager here
+                        instance = obj(current_module.__name__,10, self.db_manager)
 
                 modules = module.split('.')
                 current_task = tasks
