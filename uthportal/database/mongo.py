@@ -1,11 +1,11 @@
-
-from interface.database import IDatabaseManager
+import inspect, logging
 
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, OperationFailure
 
-from logger import get_logger, logging_level
-import inspect, logging
+from uthportal.database.database import IDatabaseManager
+from uthportal.logger import get_logger, logging_level
+
 name = inspect.stack()[0][1] #get filename
 
 logger = get_logger(name, logging.DEBUG)

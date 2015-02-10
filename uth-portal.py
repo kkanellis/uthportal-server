@@ -25,7 +25,7 @@ restart()
 """
 
 from uthportal.logger import get_logger, logging_level
-from uthportal.database import MongoDatabaseManager
+from uthportal.database.mongo import MongoDatabaseManager
 from uthportal.scheduler import Scheduler
 
 from uthportal import library

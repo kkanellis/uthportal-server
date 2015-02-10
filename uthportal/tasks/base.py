@@ -1,13 +1,12 @@
-from abc import ABCMeta, abstractmethod
 import logging
+from abc import ABCMeta, abstractmethod
 from datetime import datetime
 
+import feedparser
 import requests
 from requests.exceptions import ConnectionError, Timeout
-import feedparser
 
-from uthportal.database import MongoDatabaseManager
-
+from uthportal.database.mongo import MongoDatabaseManager
 
 logger = logging.getLogger(__name__)
 
