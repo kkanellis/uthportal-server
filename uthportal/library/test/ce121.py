@@ -1,4 +1,8 @@
-from uthportal.interfaces.tasks import CourseTask
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
+from uthportal.interface.tasks import CourseTask
 
 class ce121(CourseTask):
     entry = {
