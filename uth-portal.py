@@ -1,29 +1,5 @@
 #!/usr/bin/env python
 
-"""
-fields:
-
-DatabaseManager, NotifierManager
-tasks
-settings
-
-server_thread
-
-functions:
-
-__init__: Call function to read configuration files. Call functions to create tree from tasks. Instantiate the databasemanager, notifiermanager, scheduler.
-
-read_settings()
-
-create_task_tree(tasks_dir)
-
-start_server()
-
-stop_server()
-
-restart()
-"""
-
 from uthportal.logger import get_logger, logging_level
 from uthportal.database.mongo import MongoDatabaseManager
 from uthportal.scheduler import Scheduler
@@ -111,8 +87,10 @@ from time import sleep
 uth_portal = None
 
 def signal_handler(signal, frame):
-    uth_portal.logger.warn('User interrupt!')
+    uth_portal.logger.warn('User interrupt! Exiting....')
+
     uth_portal.save_settings()
+    uth_portal.db_manager.disconnect()
     sys.exit(0)
 
 def main():

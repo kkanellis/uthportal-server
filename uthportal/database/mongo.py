@@ -67,7 +67,7 @@ class MongoDatabaseManager(IDatabaseManager):
     def insert_document(self, collection, document, **kwargs):
         if not self.client:
             logger.error('No active DB connection! Cannot perform an insertion')
-            return
+            return False
 
         try:
             self.db[collection].insert(document, **kwargs)
@@ -81,7 +81,7 @@ class MongoDatabaseManager(IDatabaseManager):
     def remove_document(self, collection, query, **kwargs):
         if not self.client:
             logger.error('No active DB connection! Cannot perform a deletion')
-            return
+            return False
 
         try:
             self.db[collection].remove(query, **kwargs)
@@ -95,7 +95,7 @@ class MongoDatabaseManager(IDatabaseManager):
     def find_document(self, collection, query, **kwargs):
         if not self.client:
             logger.error('No active DB connection! Cannot perform a search')
-            return
+            return None
 
         # Since we are interested in one document, find_one is used.
 
@@ -111,7 +111,7 @@ class MongoDatabaseManager(IDatabaseManager):
     def update_document(self, collection, query, document, **kwargs):
         if not self.client:
             logger.error('No active DB connection! Cannot perform a deletion')
-            return
+            return False
 
         try:
             self.db[collection].update(query, document, **kwargs)
