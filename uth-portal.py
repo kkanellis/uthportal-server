@@ -7,7 +7,6 @@ from uthportal.scheduler import Scheduler
 from uthportal import library
 from uthportal.library import inf
 
-#from uthportal.server import ....
 import logging
 
 from pkgutil import walk_packages, iter_modules
@@ -38,7 +37,7 @@ class UthPortal(object):
                     # class name must be contained in module name e.g.
                     # module name: inf.courses.ce121
                     # class name: ce121
-                    # this is to avoid importing interface classes
+                    # this is to avoid importing interface/base classes
                     if isclass(obj) and (name in current_module.__name__):
                         self.logger.info('Importing: %s object: %s' %(name, obj))
                         class_name = name
@@ -54,9 +53,7 @@ class UthPortal(object):
                             current_task[task] = {}
                     current_task = current_task[task]
 
-                current_task = instance
-
-        print tasks
+        self.logger.debug(tasks)
 
     def import_error(self, name):
         self.logger.error("Error importing module %s" % name)
