@@ -16,26 +16,28 @@ passed as arguments:
 
 """
 
-import logging
+from logger import get_logger, logging_level
 
 import gevent
 from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.base import JobLookupError, ConflictingIdError
 
-logger = logging.getLogger(__name__)
-
 class Scheduler(object):
     def __init__(self, tasks, apscheduler_kwargs, interval_dict):
+        import inspect
+        name = inspect.stack()[0][1] #get filename
+
+        self.logger = get_logger(name, logging_level.DEBUG)
 
         if not isinstance(tasks, dict):
-            logger.error('tasks arg not a dictionary')
+            self.logger.error('tasks arg not a dictionary')
             return
 
         self.tasks = tasks
         self.intervals = interval_dict
 
-        logger.debug('Checking tasks paths!')
+        self.logger.debug('Checking tasks paths!')
         # TODO: Check if paths are valid
         self.init(apscheduler_kwargs)
 
@@ -50,7 +52,7 @@ class Scheduler(object):
                 _class_str = str(type(_class))
 
                 if not _class_str in self.intervals:
-                    logger.warning('Interval not defined for "%s" class' % _class_str)
+                    self.logger.warning('Interval not defined for "%s" class' % _class_str)
                     continue
 
                 id = '%s.%s' % (dept, task)
@@ -61,7 +63,7 @@ class Scheduler(object):
     def clear(self):
         """ Removes all jobs from scheduler """
         if not isinstance(self.sched, BaseScheduler):
-            logger.error('Scheduler is not initialized')
+            self.logger.error('Scheduler is not initialized')
             return
 
         for job in self.sched.get_jobs():
@@ -70,36 +72,36 @@ class Scheduler(object):
     def start(self):
         """ Start the scheduler by starting the instance of APScheduler """
         if not isinstance(self.sched, BaseScheduler):
-            logger.error('Scheduler is not initialized')
+            self.logger.error('Scheduler is not initialized')
             return
 
         try:
             self.sched.start()
         except SchedulerAlreadyRunningError, e:
-            logger.warning(e)
+            self.logger.warning(e)
 
 
     def stop(self, wait=True):
         """ Stop the scheduler. If wait=True, then it will be stopped after
             all jobs that are currently executed will finish """
         if not isinstance(self.sched, BaseScheduler):
-            logger.warning('Scheduler is not initialized')
+            self.logger.warning('Scheduler is not initialized')
             return
 
         try:
             self.sched.shutdown(wait=wait)
         except SchedulerNotRunningError, e:
-            logger.warning(e)
+            self.logger.warning(e)
 
     def add_task(self, id, func, interval=None):
         """ Adds a new task into the queue. If interval is None then the task
             will be executed once. """
         if not isinstance(id, basestring):
-            logger.error('"id" argument is not an instance of basestring')
+            self.logger.error('"id" argument is not an instance of basestring')
             return
 
         if not hasattr(func, '__call__'):
-            logger.error('"func" is not callable')
+            self.logger.error('"func" is not callable')
             return
 
         try:
@@ -108,25 +110,24 @@ class Scheduler(object):
             elif isinstace is None: # Run once (ommit trigger)
                 self.sched.add_job(func, id=id)
             else:
-                logger.error('"interval" is not an instance of [datetime|None]')
+                self.logger.error('"interval" is not an instance of [datetime|None]')
                 return
         except ConfilictingIdError, e:
-            logger.warning(e)
+            self.logger.warning(e)
 
     def remove_task(self, id):
         """ Remove a job from the queue """
         if not isinstance(id, basestring):
-            logger.error('"id" argument is not an instance of basestring')
+            self.logger.error('"id" argument is not an instance of basestring')
             return
 
         try:
             self.sched.remove_job(id)
         except JobLookupError, e:
-            logger.warning(e)
+            self.logger.warning(e)
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
 
     sched = Scheduler({ }, { }, { })
     sched.stop()
