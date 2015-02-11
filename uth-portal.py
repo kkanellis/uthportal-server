@@ -7,8 +7,6 @@ from uthportal.scheduler import Scheduler
 from uthportal import library
 from uthportal.library import inf
 
-import logging
-
 from pkgutil import walk_packages, iter_modules
 from importlib import import_module
 from inspect import getmembers, isclass
@@ -18,7 +16,7 @@ class UthPortal(object):
         import inspect
         name = inspect.stack()[0][1] #get filename
 
-        self.logger = get_logger(name, logging.DEBUG)
+        self.logger = get_logger(name, logging_level.DEBUG)
 
         self.db_manager = MongoDatabaseManager(host='localhost', port=27017, db_name= 'uthportal')
         self.db_manager.connect()

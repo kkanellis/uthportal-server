@@ -1,9 +1,9 @@
 import logging
 import os
 
-class logging_level():
+class logging_level:
         WARN = logging.WARN
-        DEBUG = logging.debug
+        DEBUG = logging.DEBUG
         ERROR = logging.ERROR
         INFO = logging.INFO
 
