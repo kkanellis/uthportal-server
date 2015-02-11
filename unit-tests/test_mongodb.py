@@ -1,13 +1,12 @@
 from __future__ import absolute_import
-import logging
 
-from uthportal.database import MongoDatabaseManager
-logging.basicConfig(level=logging.DEBUG)
+from uthportal.database.mongo import MongoDatabaseManager
 
 
 def main():
-    manager = MongoDatabaseManager(host='localhost', port=27017)
+    manager = MongoDatabaseManager(host='localhost', port=27017, db_name='test_db')
     result = manager.connect()
+    manager.disconnect()
 
     if result:
         manager.disconnect()

@@ -10,6 +10,17 @@ name = inspect.stack()[0][1] #get filename
 
 logger = get_logger(name, logging.DEBUG)
 
+def check_connected(function):
+    def new_func(self, *args, **kwargs):
+        if not self.client:
+            logger.error('Cannot complete action: [%s], database not connected' % func.__name__)
+            return False
+        else:
+            function(self, *args, **kwargs)
+
+    return new_func
+
+
 class MongoDatabaseManager(IDatabaseManager):
 
     def __init__(self, **kwargs):
@@ -54,21 +65,13 @@ class MongoDatabaseManager(IDatabaseManager):
         logger.debug('Connected to MongoDB successfully!')
         return True
 
-
+    @check_connected
     def disconnect(self):
         """ No need to close connections. This is handled by pymongo! """
-        if not self.client:
-            logger.warning('Trying to disconnect from a non-connected mongodb client')
-            return
-
         self.client.disconnect()
 
-
+    @check_connected
     def insert_document(self, collection, document, **kwargs):
-        if not self.client:
-            logger.error('No active DB connection! Cannot perform an insertion')
-            return False
-
         try:
             self.db[collection].insert(document, **kwargs)
         except OperationFailure:
@@ -78,10 +81,8 @@ class MongoDatabaseManager(IDatabaseManager):
         return True
 
 
+    @check_connected
     def remove_document(self, collection, query, **kwargs):
-        if not self.client:
-            logger.error('No active DB connection! Cannot perform a deletion')
-            return False
 
         try:
             self.db[collection].remove(query, **kwargs)
@@ -91,12 +92,8 @@ class MongoDatabaseManager(IDatabaseManager):
 
         return True
 
-
+    @check_connected
     def find_document(self, collection, query, **kwargs):
-        if not self.client:
-            logger.error('No active DB connection! Cannot perform a search')
-            return None
-
         # Since we are interested in one document, find_one is used.
 
         try:
@@ -107,11 +104,8 @@ class MongoDatabaseManager(IDatabaseManager):
 
         return document
 
-
+    @check_connected
     def update_document(self, collection, query, document, **kwargs):
-        if not self.client:
-            logger.error('No active DB connection! Cannot perform a deletion')
-            return False
 
         try:
             self.db[collection].update(query, document, **kwargs)
