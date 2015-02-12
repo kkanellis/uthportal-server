@@ -24,7 +24,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.base import JobLookupError, ConflictingIdError
 
 class Scheduler(object):
-    def __init__(self, tasks, apscheduler_kwargs, interval_dict):
+    def __init__(self, tasks, apscheduler_kwargs, intervals):
         import inspect
         name = inspect.stack()[0][1] #get filename
 
@@ -35,7 +35,7 @@ class Scheduler(object):
             return
 
         self.tasks = tasks
-        self.intervals = interval_dict
+        self.intervals = intervals
 
         self.logger.debug('Checking tasks paths!')
         # TODO: Check if paths are valid

@@ -33,7 +33,7 @@ class CourseTask(BaseTask):
 
     def parse_site(self, bsoup):
         """Parse the fetced document"""
-        return
+        return None
 
     def parse_eclass(self):
         """Parse the fetced document"""

@@ -112,6 +112,10 @@ class BaseTask(object):
 
     def transmit(self, *args, **kwargs):
         """ Save the current document into the server collection free of uneccessary fields """
+        #TODO: Implement ignore_fields
+
+        if not self.database_manager.update_document('server.%s' % self.db_collection, self.document, *args, **kwargs):
+            logger.warning('Could not transmit document "%s"' %self.path)
         pass
 
     def load(self, *args, **kwargs):
