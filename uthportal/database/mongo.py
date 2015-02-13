@@ -6,8 +6,6 @@ from uthportal.database.database import IDatabaseManager
 from uthportal.logger import get_logger, logging_level
 
 
-logger = get_logger(name, logging.DEBUG)
-
 def check_connected(function):
     def new_func(self, *args, **kwargs):
         if not self.client:
