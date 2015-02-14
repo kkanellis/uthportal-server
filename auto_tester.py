@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import sys
+import unittest
+
 from pkgutil import iter_modules
 from importlib import import_module
-TEST_PACKAGE = 'unit-tests'
+TEST_PACKAGE = 'tests'
 
 def explore_package(package_name):
     """
@@ -12,27 +14,10 @@ def explore_package(package_name):
     return [name for x, name, y in iter_modules([package_name])]
 
 def main():
-    modules = explore_package(TEST_PACKAGE)
+    modules = ['%s.%s' % (TEST_PACKAGE, module) for module in explore_package(TEST_PACKAGE)]
 
-    #Import each module and extract it's main function, then call it.
-    for i, module in enumerate(modules):
-        print("[%s]: Running test: [ %s ]..." % (i, module))
-        imported_module = import_module("%s.%s" % (TEST_PACKAGE,module) )
-
-        if imported_module is None:
-            print("Cannot import module")
-            continue
-
-        imported_main = getattr(imported_module, 'main')
-
-        if imported_module is None:
-            print("ERROR: Module %s doesn't contain a main function" % str(module))
-            continue
-
-        if imported_main() :
-            print("\tSuccess!")
-        else :
-            print(" \tFailure")
+    testSuite = unittest.defaultTestLoader.loadTestsFromNames(modules)
+    testRunner = unittest.TextTestRunner().run(testSuite)
 
 if __name__ == "__main__":
     main()
