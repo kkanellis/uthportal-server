@@ -5,18 +5,6 @@ from pymongo.errors import ConnectionFailure, OperationFailure
 from uthportal.database.database import IDatabaseManager
 from uthportal.logger import get_logger, logging_level
 
-
-def check_connected(function):
-    def new_func(self, *args, **kwargs):
-        if not self.client:
-            self.logger.error('Cannot complete action: [%s], database not connected' % func.__name__)
-            return False
-        else:
-            function(self, *args, **kwargs)
-
-    return new_func
-
-
 class MongoDatabaseManager(IDatabaseManager):
 
     def __init__(self, **kwargs):
@@ -36,6 +24,16 @@ class MongoDatabaseManager(IDatabaseManager):
 
         self.info = kwargs
 
+    def _requires_client(function):
+        def new_func(self, *args, **kwargs):
+            if not self.client:
+                self.logger.error('Cannot complete action: [%s], database not connected' % func.__name__)
+                return False
+            else:
+                return function(self, *args, **kwargs)
+
+        return new_func
+
     def connect(self, *args, **kwargs):
         self.client = None
 
@@ -46,7 +44,8 @@ class MongoDatabaseManager(IDatabaseManager):
                     *args, **kwargs)
 
             # Store the database
-            self.db = self.client['db_name']
+            db_name = self.info['db_name']
+            self.db = self.client[db_name]
 
         except ConnectionFailure:
             self.logger.error('ConnectionFailure: Cannot connect to database (%s, %s)' % (self.info['host'], self.info['port']))
@@ -65,23 +64,25 @@ class MongoDatabaseManager(IDatabaseManager):
         self.logger.debug('Connected to MongoDB successfully!')
         return True
 
-    @check_connected
+    @_requires_client
     def disconnect(self):
         """ No need to close connections. This is handled by pymongo! """
         self.client.disconnect()
 
-    @check_connected
+        return True
+
+    @_requires_client
     def insert_document(self, collection, document, **kwargs):
         try:
             self.db[collection].insert(document, **kwargs)
-        except OperationFailure:
+        except OperationFailure, e:
             self.logger.error('OperationFailure: Cannot insert a document into "%s"' % collection)
             return False
 
         return True
 
 
-    @check_connected
+    @_requires_client
     def remove_document(self, collection, query, **kwargs):
 
         try:
@@ -92,10 +93,11 @@ class MongoDatabaseManager(IDatabaseManager):
 
         return True
 
-    @check_connected
+    @_requires_client
     def find_document(self, collection, query, **kwargs):
         # Since we are interested in one document, find_one is used.
 
+        document = None
         try:
             document = self.db[collection].find_one(query, **kwargs)
         except OperationFailure:
@@ -104,7 +106,7 @@ class MongoDatabaseManager(IDatabaseManager):
 
         return document
 
-    @check_connected
+    @_requires_client
     def update_document(self, collection, query, document, **kwargs):
 
         try:
@@ -117,4 +119,15 @@ class MongoDatabaseManager(IDatabaseManager):
             return False
 
         return True
+
+    @_requires_client
+    def drop_collection(self, collection, **kwargs):
+        try:
+            self.db.drop_collection(collection)
+        except Exception, e:
+            self.logger.error(e)
+            return False
+
+        return True
+
 
