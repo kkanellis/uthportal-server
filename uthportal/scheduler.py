@@ -16,19 +16,16 @@ passed as arguments:
 
 """
 
-from logger import get_logger, logging_level
-
 import gevent
 from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.base import JobLookupError, ConflictingIdError
 
-class Scheduler(object):
-    def __init__(self, tasks, apscheduler_kwargs, intervals):
-        import inspect
-        name = inspect.stack()[0][1] #get filename
+from uthportal.logger import get_logger, logging_level
 
-        self.logger = get_logger(name, logging_level.DEBUG)
+class Scheduler(object):
+    def __init__(self, tasks, intervals):
+        self.logger = get_logger(('%s.%s' % __name__,self.__class__.__name__), logging_level.DEBUG)
 
         if not isinstance(tasks, dict):
             self.logger.error('tasks arg not a dictionary')
@@ -39,12 +36,11 @@ class Scheduler(object):
 
         self.logger.debug('Checking tasks paths!')
         # TODO: Check if paths are valid
-        self.init(apscheduler_kwargs)
 
     def init(self, apscheduler_kwargs):
         """ Initializes the queue, and adds the tasks """
 
-        self.sched = BackgroundScheduler(apscheduler_kwargs, logger=logger)
+        self.sched = BackgroundScheduler(logger=self.logger, **apscheduler_kwargs)
 
         for dept in self.tasks:
             for task in self.tasks[dept]:
@@ -57,8 +53,6 @@ class Scheduler(object):
 
                 id = '%s.%s' % (dept, task)
                 self.add_task(id, _class, self.intervals[_class_str])
-
-        self.start()
 
     def clear(self):
         """ Removes all jobs from scheduler """
@@ -105,12 +99,12 @@ class Scheduler(object):
             return
 
         try:
-            if isinstance(interval, datetime):
+            if isinstance(interval, time):
                 self.sched.add_job(func, 'interval', id, interval)
             elif isinstace is None: # Run once (ommit trigger)
                 self.sched.add_job(func, id=id)
             else:
-                self.logger.error('"interval" is not an instance of [datetime|None]')
+                self.logger.error('"interval" is not an instance of [time|None]')
                 return
         except ConfilictingIdError, e:
             self.logger.warning(e)
@@ -125,10 +119,4 @@ class Scheduler(object):
             self.sched.remove_job(id)
         except JobLookupError, e:
             self.logger.warning(e)
-
-
-if __name__ == '__main__':
-
-    sched = Scheduler({ }, { }, { })
-    sched.stop()
 
