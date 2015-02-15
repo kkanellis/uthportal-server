@@ -1,6 +1,8 @@
 from uthportal.tasks.base import BaseTask
 
 class CourseTask(BaseTask):
+    task_type = 'CourseTask'
+
     def __init__(self, path, timeout, database_manager):
         super(CourseTask, self).__init__(path, timeout, database_manager)
 
