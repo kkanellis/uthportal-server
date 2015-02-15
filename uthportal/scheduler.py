@@ -15,7 +15,6 @@ passed as arguments:
     *
 
 """
-
 import gevent
 from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -25,34 +24,49 @@ from uthportal.logger import get_logger, logging_level
 
 class Scheduler(object):
     def __init__(self, tasks, intervals):
-        self.logger = get_logger(('%s.%s' % __name__,self.__class__.__name__), logging_level.DEBUG)
+        self.logger = get_logger('%s.%s' % (__name__, self.__class__.__name__), logging_level.DEBUG)
 
         if not isinstance(tasks, dict):
-            self.logger.error('tasks arg not a dictionary')
+            self.logger.error('tasks is not a dictionary')
             return
 
-        self.tasks = tasks
+        if not isinstance(intervals, dict):
+            self.logger.error('intervals is not a dictionary')
+            return
+
+        self.tasks = self._flatten_dict(tasks, '')
+
+        self.logger.debug('Tasks found:')
+        self.logger.debug( 70*'-' )
+        for key in self.tasks:
+            self.logger.debug(key)
+        self.logger.debug( 70*'-' )
+
         self.intervals = intervals
 
-        self.logger.debug('Checking tasks paths!')
+        #self.logger.debug('Checking tasks paths!')
         # TODO: Check if paths are valid
 
-    def init(self, apscheduler_kwargs):
+    def init(self, **apscheduler_kwargs):
         """ Initializes the queue, and adds the tasks """
 
-        self.sched = BackgroundScheduler(logger=self.logger, **apscheduler_kwargs)
+        self.logger.info('Initilizing APScheduler...')
 
-        for dept in self.tasks:
-            for task in self.tasks[dept]:
-                _class = self.tasks[dept][task]
-                _class_str = str(type(_class))
+        ap_logger = get_logger('apscheduler', logging_level.DEBUG)
+        self.sched = BackgroundScheduler(logger=ap_logger, **apscheduler_kwargs)
 
-                if not _class_str in self.intervals:
-                    self.logger.warning('Interval not defined for "%s" class' % _class_str)
-                    continue
+        for (id, task) in self.tasks.items():
+            task_type = task.task_type
 
-                id = '%s.%s' % (dept, task)
-                self.add_task(id, _class, self.intervals[_class_str])
+            self.logger.debug('Adding task "%s" [%s]' % (id, task_type))
+
+            if not task_type in self.intervals:
+                self.logger.warning('Interval not defined for "%s" class' % task_type)
+                continue
+
+            self.add_task(id, task, self.intervals[task_type])
+
+        self.logger.info('APScheduler initialized!')
 
     def clear(self):
         """ Removes all jobs from scheduler """
@@ -99,14 +113,14 @@ class Scheduler(object):
             return
 
         try:
-            if isinstance(interval, time):
-                self.sched.add_job(func, 'interval', id, interval)
-            elif isinstace is None: # Run once (ommit trigger)
+            if isinstance(interval, dict):
+                self.sched.add_job(func, trigger='interval', id=id, **interval)
+            elif interval is None: # Run once (ommit trigger)
                 self.sched.add_job(func, id=id)
             else:
                 self.logger.error('"interval" is not an instance of [time|None]')
                 return
-        except ConfilictingIdError, e:
+        except ConflictingIdError, e:
             self.logger.warning(e)
 
     def remove_task(self, id):
@@ -120,3 +134,16 @@ class Scheduler(object):
         except JobLookupError, e:
             self.logger.warning(e)
 
+    def _flatten_dict(self, d, path):
+        new_dict = { }
+        for key in d:
+            if isinstance(d[key], dict):
+                new_path = '%s.%s' % (path, key) if path else key
+
+                x = self._flatten_dict(d[key],new_path).copy()
+                new_dict.update(x)
+            else:
+                new_key = '%s.%s' % (path, key)
+                new_dict[new_key] = d[key]
+
+        return new_dict
