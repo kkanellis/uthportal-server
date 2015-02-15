@@ -1,30 +1,36 @@
 #!/usr/bin/env python
 
+import os
+
 from uthportal.configure import settings
 from uthportal.logger import get_logger, logging_level
 from uthportal.database.mongo import MongoDatabaseManager
 from uthportal.scheduler import Scheduler
-
-from uthportal import library
-from uthportal.library import inf
 
 from pkgutil import walk_packages, iter_modules
 from importlib import import_module
 from inspect import getmembers, isclass
 
 class UthPortal(object):
-    def __init__(self):
-        import inspect
-        name = inspect.stack()[0][1] #get filename
+    def __init__(self, settings):
+        self.logger = get_logger(__name__, logging_level.DEBUG)
+        self.settings = settings
 
-        self.logger = get_logger(name, logging_level.DEBUG)
+        if not ('scheduler' in self.settings and 'database' in self.settings):
+            self.logger.error('Missing keys from settings [database, scheduler]')
+            return
 
-        self.db_manager = MongoDatabaseManager(host='localhost', port=27017, db_name= 'uthportal')
+        self.db_manager = MongoDatabaseManager(**self.settings['database'])
         self.db_manager.connect()
 
-    def load_tasks(self, package):
+        self.scheduler = None
+
+    def load_tasks(self):
+        full_libary_path = os.path.dirname(os.path.abspath(__file__)) + '/' + self.settings['library_path']
+        self.logger.info('Modules will be loaded from "%s"' % full_libary_path)
+
         tasks = {}
-        for loader, module, is_pkg in walk_packages(package.__path__, onerror = self.import_error):
+        for loader, module, is_pkg in walk_packages([ full_libary_path], onerror = self.import_error):
             #load next package
             current_module = loader.find_module(module).load_module(module)
 
@@ -52,6 +58,8 @@ class UthPortal(object):
                             current_task[task] = {}
                     current_task = current_task[task]
 
+        self.tasks = tasks
+
         self.logger.debug(tasks)
 
     def import_error(self, name):
@@ -59,15 +67,40 @@ class UthPortal(object):
         error_type, value, traceback = sys.exc_info()
         self.logger.error(traceback)
 
-    def start_server(self):
+    def start(self):
+        self._start_scheduler()
+
+    def stop(self):
         pass
 
-    def stop_server(self):
-        pass
-
-    def restart_server(self):
+    def restart(self):
         self.stop_server()
         self.start_server()
+
+    def _start_server(self):
+        pass
+
+    def _stop_server(self):
+        pass
+
+    def _start_scheduler(self):
+        if self.scheduler:
+            self.logger.warning('Scheduler already running...')
+            return
+
+        self.logger.debug('Starting the scheduler')
+
+        self.scheduler = Scheduler(
+                self.tasks,
+                self.settings['scheduler']['intervals'])
+
+        self.scheduler.init(**self.settings['scheduler']['apscheduler'])
+        self.scheduler.start()
+
+        self.logger.debug('Scheduler started successfully!')
+
+    def _stop_scheduler(self):
+        pass
 
     def load_settings(self):
         pass
@@ -94,9 +127,10 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     global uth_portal
-    uth_portal = UthPortal()
+    uth_portal = UthPortal(settings)
+    uth_portal.load_tasks()
+    uth_portal.start()
 
-    uth_portal.load_tasks(library)
     while True:
         sleep(2)
 
