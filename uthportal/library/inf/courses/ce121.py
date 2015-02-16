@@ -4,7 +4,7 @@ from __future__ import absolute_import
 from uthportal.tasks.course import CourseTask
 
 class ce121(CourseTask):
-    entry = {
+    document_prototype = {
         'code': 'ce121',
         'code_eclass': '',
         'announcements': {

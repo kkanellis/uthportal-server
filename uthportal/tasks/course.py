@@ -8,7 +8,18 @@ class CourseTask(BaseTask):
 
         self.update_fields =[ 'announcements.site', 'announcements.eclass' ]
         self.db_query = { 'code' : self.id }
+
+        self.logger.debug('Loading document from database...')
+
         self.document = self.load()
+        if not self.document:
+            if hasattr(self, 'document_prototype'):
+                self.logger.info('No document found in database. Using prototype')
+                self.document = self.document_prototype
+                self.save()
+            else:
+                self.logger.error('No document_prototype is available!')
+                return
 
     def update(self):
         new_document_fields = {
@@ -42,7 +53,7 @@ class CourseTask(BaseTask):
         try:
             rss = feedparser.parse(html)
         except Exception, e:
-            logger.error('[%s] %s' % (self.id, e))
+            logger.error(e)
             return None
 
         # Datetime format
@@ -59,7 +70,8 @@ class CourseTask(BaseTask):
                         }
                         for entry in rss.entries ]
         except Exception, e:
-            logger.error('[%s] %s' %  (self.id, e))
+            logger.error(e)
+            return None
 
         return entries
 
@@ -74,7 +86,7 @@ class CourseTask(BaseTask):
         try:
             bsoup = BeautifulSoup(html)
         except Exception, e:
-            logger.error('[%s] Error while parsing html: %s' % (self.id, e))
+            logger.error('Error while parsing html: %s' % e)
 
         return bsoup
 
