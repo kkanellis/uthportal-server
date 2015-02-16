@@ -26,9 +26,8 @@ class BaseTask(object):
         """This is the method called from the Scheduler when this object is
         next in queue"""
 
-        print self.document
-        if not hasattr(self, 'document'):
-            self.logger.error('Task has no document attribute. Task stalled!')
+        if not hasattr(self, 'document') or not self.document:
+            self.logger.error('Task has no document attribute or document is empty. Task stalled!')
         else:
             self.update()
 
@@ -45,11 +44,11 @@ class BaseTask(object):
             self.logger.warning('%s: Timeout [%d]' % (link, self.timeout))
             return None
 
-        if page.code is not (200 or 301):
+        if page.status_code is not (200 or 301):
             self.logger.warning('%s: Returned [%d]' % (link, page.code))
             return None
 
-        self.logger.debug('Fetched successfully! [%d]' % page.code)
+        self.logger.debug('Fetched successfully! [%d]' % page.status_code)
 
         page.encoding = 'utf-8'
         return page.text
