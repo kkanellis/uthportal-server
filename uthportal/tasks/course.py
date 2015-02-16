@@ -1,4 +1,5 @@
 
+import feedparser
 from bs4 import BeautifulSoup
 
 from uthportal.tasks.base import BaseTask
@@ -26,10 +27,9 @@ class CourseTask(BaseTask):
 
     def update(self):
         new_document_fields = {
-                'announcements.site': self.__check_site()
-                #'announcements.eclass': self.__check_eclass()
+                'announcements.site': self.__check_site(),
+                'announcements.eclass': self.__check_eclass()
         }
-
 
         # Check any new data exist
         if any( field_data for field_data in new_document_fields.items() ):
@@ -40,12 +40,12 @@ class CourseTask(BaseTask):
     def __check_site(self):
         link = self._get_document_field(self.document, 'announcements.link_site')
         if not link:
-            self.logger.error('"link_site" not found in document!')
+            self.logger.info('"link_site" not found in document!')
             return None
 
         html = self.fetch(link)
         if not html:
-            self.warning('Fetch returned empty HTML')
+            self.warning('Fetch "%s" returned nothing' % link)
             return None
 
         bsoup = self.__getsoup(html)
@@ -55,11 +55,24 @@ class CourseTask(BaseTask):
 
         return self.parse_site(bsoup)
 
+    def __check_eclass(self):
+        link = self._get_document_field(self.document, 'announcements.link_eclass')
+        if not link:
+            self.logger.info('"link_eclass" not found in document!')
+            return None
+
+        html = self.fetch(link)
+        if not html:
+            self.warning('Fetch "%s" returned nothing' % link)
+            return None
+
+        return self.parse_eclass(html)
+
     def parse_site(self, bsoup):
         """Parse the fetced document"""
         return None
 
-    def parse_eclass(self):
+    def parse_eclass(self, html):
         """Parse the fetced document"""
 
         self.logger.debug('Parsing eclass ...')
