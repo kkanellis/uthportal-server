@@ -13,14 +13,14 @@ class BaseTask(object):
     __metaclass__ = ABCMeta
 
     def __init__(self, path, timeout, database_manager, **kwargs):
-        self.logger = get_logger('%s.%s' % (__name__, self.__class__.__name__), logging_level.DEBUG)
+        self.logger = get_logger(path , logging_level.DEBUG)
 
         self.path = path
         self.timeout = timeout
         self.database_manager = database_manager
 
         self.id = path.split('.')[-1]
-        self.db_collection = ''.join( path.split('.')[:-1] )
+        self.db_collection = '.'.join( path.split('.')[:-1] )
 
     def __call__(self):
         """This is the method called from the Scheduler when this object is
@@ -110,7 +110,7 @@ class BaseTask(object):
 
     def save(self, *args, **kwargs):
         """Save result dictionary in database"""
-        if not self.database_manager.update_document(self.db_collection, self.db_query, self.document, *args, **kwargs):
+        if not self.database_manager.update_document(self.db_collection, self.db_query, self.document, *args, upsert=True, **kwargs):
             self.logger.warning('Could not save document "%s"' % self.path)
 
     def archive(self, *args, **kwargs):
@@ -155,8 +155,8 @@ class BaseTask(object):
 
             document = document[key]
 
-        if key[-1] in document:
-            return document[key]
+        if keys[-1] in document:
+            return document[keys[-1]]
         else:
             return None
 
