@@ -1,3 +1,6 @@
+
+from bs4 import BeautifulSoup
+
 from uthportal.tasks.base import BaseTask
 
 class CourseTask(BaseTask):
@@ -23,14 +26,19 @@ class CourseTask(BaseTask):
 
     def update(self):
         new_document_fields = {
-                'announcements.site': self.__check_site(),
-                'announcements.eclass': self.__check_eclass()
+                'announcements.site': self.__check_site()
+                #'announcements.eclass': self.__check_eclass()
         }
 
-        super(CourseTask, self).update(new_fields=new_document_fields)
+
+        # Check any new data exist
+        if any( field_data for field_data in new_document_fields.items() ):
+            super(CourseTask, self).update(new_fields=new_document_fields)
+        else:
+            self.logger.warning('No dictionary field contains new data.')
 
     def __check_site(self):
-        link = self.document['announcements']['link_site']
+        link = self._get_document_field(self.document, 'announcements.link_site')
         if not link:
             self.logger.error('"link_site" not found in document!')
             return None
@@ -86,13 +94,13 @@ class CourseTask(BaseTask):
         """Process the document before saving"""
         pass
 
-    def __getsoup(html):
+    def __getsoup(self, html):
         """ Returns the BeautifulSoup object from the html """
         bsoup = None
         try:
             bsoup = BeautifulSoup(html)
         except Exception, e:
-            logger.error('Error while parsing html: %s' % e)
+            self.logger.error('Error while parsing html: %s' % e)
 
         return bsoup
 
