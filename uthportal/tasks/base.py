@@ -73,7 +73,7 @@ class BaseTask(object):
                 return
 
         #Get self.document's update_fields
-        old_fields = { field: self.__get_document_field(self.document, field)
+        old_fields = { field: self._get_document_field(self.document, field)
                             for field in self.update_fields }
 
         #Checking for differences in the according update_fields """
@@ -90,16 +90,16 @@ class BaseTask(object):
 
             #Update new fields """
             for field in self.update_fields:
-                self.__set_document_field(self.document, field, new_fields[field])
+                self._set_document_field(self.document, field, new_fields[field])
 
             #Update remaining fields """
-            self.__set_document_field(self.document, 'first_updated', now)
-            self.__set_document_field(self.document, 'last_updated', now)
+            self._set_document_field(self.document, 'first_updated', now)
+            self._set_document_field(self.document, 'last_updated', now)
 
             self.transmit()
             self.notify()
         else:
-            self.__set_document_field(self.document, 'last_updated', now)
+            self._set_document_field(self.document, 'last_updated', now)
 
         self.save()
 
@@ -132,7 +132,7 @@ class BaseTask(object):
 
     """ Helper methods """
 
-    def __set_document_field(self, document, field, value):
+    def _set_document_field(self, document, field, value):
         """ Sets the field (dot notation format) in the provided document """
         keys = field.split('.')
         for key in keys[:-1]:
@@ -145,9 +145,9 @@ class BaseTask(object):
         # Set the field
         document[keys[-1]] = value
 
-    def __get_document_field(self, document, field):
+    def _get_document_field(self, document, field):
         """ Gets the field (dot notation format) in the provided document """
-        keys = fields.split('.')
+        keys = field.split('.')
         for key in keys[:-1]:
             if key not in document:
                 self.logger.warning('Key "%s" not found in field "%s"' % (key, field))
