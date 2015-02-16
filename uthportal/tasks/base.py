@@ -66,10 +66,10 @@ class BaseTask(object):
             self.logger.warning('Update method called without "new_fields" dict')
             return
 
-        #Check if 'new_fields' has the neccessary fields
+        # Check if 'new_fields' has the neccessary fields
         for field in self.update_fields:
             if field not in new_fields:
-                self.logger.warning('Field "%s" not present in "new_fields" dict' % field)
+                self.logger.error('Field "%s" not present in "new_fields" dict. Stalling task!' % field)
                 return
 
         #Get self.document's update_fields
@@ -86,9 +86,11 @@ class BaseTask(object):
 
         now = datetime.now()
         if differ:
+            self.logger.debug('Archiving old document...')
             self.archive()
 
             #Update new fields """
+            self.logger.debug('Updating new fields...')
             for field in self.update_fields:
                 self._set_document_field(self.document, field, new_fields[field])
 
@@ -96,12 +98,17 @@ class BaseTask(object):
             self._set_document_field(self.document, 'first_updated', now)
             self._set_document_field(self.document, 'last_updated', now)
 
+            self.logger.debug('Transmitting new document...')
             self.transmit()
+
+            self.logger.debug('Notifing clients...')
             self.notify()
         else:
+            self.logger.debug('No new entries found')
             self._set_document_field(self.document, 'last_updated', now)
 
         self.save()
+        self.logger.debug('Task updated successfully!')
 
     def notify(self):
         pass
