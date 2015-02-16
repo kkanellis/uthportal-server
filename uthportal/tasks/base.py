@@ -25,11 +25,17 @@ class BaseTask(object):
     def __call__(self):
         """This is the method called from the Scheduler when this object is
         next in queue"""
+
         print self.document
-        self.update()
+        if not hasattr(self, 'document'):
+            self.logger.error('Task has no document attribute. Task stalled!')
+        else:
+            self.update()
 
     def fetch(self, link):
         """Fetch a remote document to be parsed later"""
+
+        self.logger.debug('Fetching "%s" ...' % link)
         try:
             page = requests.get(link, timeout=self.timeout)
         except ConnectionError:
@@ -42,6 +48,8 @@ class BaseTask(object):
         if page.code is not (200 or 301):
             self.logger.warning('%s: Returned [%d]' % (link, page.code))
             return None
+
+        self.logger.debug('Fetched successfully! [%d]' % page.code)
 
         page.encoding = 'utf-8'
         return page.text

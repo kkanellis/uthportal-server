@@ -32,14 +32,17 @@ class CourseTask(BaseTask):
     def __check_site(self):
         link = self.document['announcements']['link_site']
         if not link:
+            self.logger.error('"link_site" not found in document!')
             return None
 
         html = self.fetch(link)
         if not html:
+            self.warning('Fetch returned empty HTML')
             return None
 
         bsoup = self.__getsoup(html)
         if not bsoup:
+            self.warning('BeautifulSoup returned None')
             return None
 
         return self.parse_site(bsoup)
@@ -50,10 +53,12 @@ class CourseTask(BaseTask):
 
     def parse_eclass(self):
         """Parse the fetced document"""
+
+        self.logger.debug('Parsing eclass ...')
         try:
             rss = feedparser.parse(html)
         except Exception, e:
-            logger.error(e)
+            self.logger.error(e)
             return None
 
         # Datetime format
@@ -70,9 +75,10 @@ class CourseTask(BaseTask):
                         }
                         for entry in rss.entries ]
         except Exception, e:
-            logger.error(e)
+            self.logger.error(e)
             return None
 
+        self.logger.debug('Parsed eclass successfully!')
         return entries
 
     def postprocess_site(self, *args, **kwargs):
