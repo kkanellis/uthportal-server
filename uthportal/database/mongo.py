@@ -12,9 +12,7 @@ class MongoDatabaseManager(IDatabaseManager):
         Neccessary keys are: host, port & db_name .
         TODO: Maybe use named arguments or get with default values?
         """
-        from inspect import stack
-        name = stack()[0][1] #get filename
-        self.logger = get_logger(name, logging_level.DEBUG)
+        self.logger = get_logger('dbmanager', logging_level.DEBUG)
 
         self.client = None
 

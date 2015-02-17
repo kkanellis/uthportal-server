@@ -24,7 +24,7 @@ from uthportal.logger import get_logger, logging_level
 
 class Scheduler(object):
     def __init__(self, tasks, intervals):
-        self.logger = get_logger('%s.%s' % (__name__, self.__class__.__name__), logging_level.DEBUG)
+        self.logger = get_logger('scheduler', logging_level.DEBUG)
 
         if not isinstance(tasks, dict):
             self.logger.error('tasks is not a dictionary')
