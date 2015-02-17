@@ -53,7 +53,13 @@ class CourseTask(BaseTask):
             self.warning('BeautifulSoup returned None')
             return None
 
-        return self.parse_site(bsoup)
+        try:
+            entries = self.parse_site(bsoup)
+        except Exception, e:
+            self.logger.error(e)
+            return None
+
+        return entries
 
     def __check_eclass(self):
         link = self._get_document_field(self.document, 'announcements.link_eclass')
