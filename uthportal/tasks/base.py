@@ -79,7 +79,7 @@ class BaseTask(object):
         #Checking for differences in the according update_fields """
         differ = False
         for field in self.update_fields:
-            if old_fields[field] != new_fields[field]:
+            if new_fields[field] and old_fields[field] != new_fields[field]:
                 self.logger.info('New entries in field "%s"' % new_fields[field])
                 differ = True
                 break
@@ -131,7 +131,7 @@ class BaseTask(object):
 
         if not self.database_manager.update_document(
                 'server.%s' % self.db_collection,
-                self.query,
+                self.db_query,
                 self.document,
                 *args, upsert=True, **kwargs):
             self.logger.warning('Could not transmit document "%s"' %self.path)
