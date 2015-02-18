@@ -3,6 +3,7 @@ import feedparser
 from bs4 import BeautifulSoup
 
 from uthportal.tasks.base import BaseTask
+from uthportal.util import fix_urls
 
 class CourseTask(BaseTask):
     task_type = 'CourseTask'
@@ -59,6 +60,12 @@ class CourseTask(BaseTask):
             self.logger.error(e)
             return None
 
+        try:
+            entries = self.postprocess_site(entries, link)
+        except Exception, e:
+            self.logger.error(e)
+            return None
+
         return entries
 
     def __check_eclass(self):
@@ -108,10 +115,13 @@ class CourseTask(BaseTask):
         self.logger.debug('Parsed eclass successfully!')
         return entries
 
-    def postprocess_site(self, *args, **kwargs):
-        #TODO: implement
+    def postprocess_site(self, entries, base_link):
         """Process the document before saving"""
-        pass
+
+        for entry in entries:
+            entry['html'] = fix_urls(entry['html'], base_link)
+
+        return entries
 
     def __getsoup(self, html):
         """ Returns the BeautifulSoup object from the html """
