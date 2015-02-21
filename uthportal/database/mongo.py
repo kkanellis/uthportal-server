@@ -74,7 +74,7 @@ class MongoDatabaseManager(IDatabaseManager):
         try:
             self.db[collection].insert(document, **kwargs)
         except OperationFailure, e:
-            self.logger.error('OperationFailure: Cannot insert a document into "%s": %s' % (collection, e))
+            self.logger.error('OperationFailure: Cannot insert a document into "%s": %s' % (collection, unicode(e)))
             return False
 
         return True
@@ -86,7 +86,7 @@ class MongoDatabaseManager(IDatabaseManager):
         try:
             self.db[collection].remove(query, **kwargs)
         except OperationFailure, e:
-            self.logger.error('OperationFailure: Cannot remove a document into "%s": %s' % (collection, e))
+            self.logger.error('OperationFailure: Cannot remove a document into "%s": %s' % (collection, unicode(e)))
             return False
 
         return True
@@ -99,7 +99,7 @@ class MongoDatabaseManager(IDatabaseManager):
         try:
             document = self.db[collection].find_one(query, **kwargs)
         except OperationFailure, e:
-            self.logger.error('OperationFailure: Cannot find a document into "%s": %s' % (collection, e))
+            self.logger.error('OperationFailure: Cannot find a document into "%s": %s' % (collection, unicode(e)))
             return None
 
         return document
@@ -110,7 +110,7 @@ class MongoDatabaseManager(IDatabaseManager):
         try:
             self.db[collection].update(query, document, **kwargs)
         except OperationFailure, e:
-            self.logger.error('OperationFailure: Cannot update a document into "%s": %s' % (collection, e))
+            self.logger.error('OperationFailure: Cannot update a document into "%s": %s' % (collection, unicode(e)))
             return False
         except TypeError, e:
             self.logger.error('TypeError: Check document(dict) & upsert(bool): %s', e)
