@@ -14,5 +14,5 @@ def fix_urls(html, base_link):
         if a_tag.has_attr('href') and not urlparse(a_tag['href']).netloc:
             a_tag['href'] = urljoin(base_link, a_tag['href'])
 
-    return bsoup.encode('utf8')
+    return unicode(bsoup)
 
