@@ -59,10 +59,12 @@ class ce121(CourseTask):
             htmls[i] = html
 
         # Create the final list
-        announce_list = [ {'title': element.span.extract().text.encode('utf8'), \
-                            'date': datetime.strptime(element.text.strip(), '%d/%m/%Y'), 'has_time': False, \
-                            'html': htmls[i].encode('utf8').strip(), \
-                            'plaintext': plaintexts[i] } for (i, element) in enumerate(dates_titles) ]
+        announce_list = [ {'title': element.span.extract().text,
+                            'date': datetime.strptime(element.text.strip(), '%d/%m/%Y'),
+                            'html': unicode(htmls[i]).strip(),
+                            'plaintext': plaintexts[i],
+                            'has_time': False }
+                                for (i, element) in enumerate(dates_titles)]
 
         return announce_list
 
