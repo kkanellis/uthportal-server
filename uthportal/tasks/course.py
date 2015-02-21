@@ -57,13 +57,13 @@ class CourseTask(BaseTask):
         try:
             entries = self.parse_site(bsoup)
         except Exception, e:
-            self.logger.error(e)
+            self.logger.error('parse_site: %s', unicode(e))
             return None
 
         try:
             entries = self.postprocess_site(entries, link)
         except Exception, e:
-            self.logger.error(e)
+            self.logger.error('post_process: %s', unicode(e))
             return None
 
         return entries
@@ -76,7 +76,7 @@ class CourseTask(BaseTask):
 
         html = self.fetch(link)
         if not html:
-            self.warning('Fetch "%s" returned nothing' % link)
+            self.logger.warning('Fetch "%s" returned nothing' % link)
             return None
 
         return self.parse_eclass(html)
