@@ -116,10 +116,18 @@ class CourseTask(BaseTask):
         return entries
 
     def postprocess_site(self, entries, base_link):
-        """Process the document before saving"""
+        """ Process the document before saving
+            For each entry:
+                a) convert all relative links to absolute ones
+                b) adds a title if no title is present
+        """
 
         for entry in entries:
             entry['html'] = fix_urls(entry['html'], base_link)
+
+            if 'title' not in entry:
+                entry_date_str = entry['date'].strftime('%2d/%2m/%4Y')
+                entry['title'] = '%s - %s' % (self.id.upper(), entry_date_str)
 
         return entries
 
