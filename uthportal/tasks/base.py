@@ -50,6 +50,7 @@ class BaseTask(object):
 
         self.logger.debug('Fetched successfully! [%d]' % page.status_code)
 
+        # Change page encoding to utf-8 so no more unicode handler is needed
         page.encoding = 'utf-8'
         return page.text
 
@@ -117,12 +118,22 @@ class BaseTask(object):
 
     def save(self, *args, **kwargs):
         """Save result dictionary in database"""
-        if not self.database_manager.update_document(self.db_collection, self.db_query, self.document, *args, upsert=True, **kwargs):
+        if not self.database_manager.update_document(
+                self.db_collection,
+                self.db_query,
+                self.document.copy(),
+                upsert=True,
+                *args,
+                **kwargs):
             self.logger.warning('Could not save document "%s"' % self.path)
 
     def archive(self, *args, **kwargs):
         """ Save the current document into the history collection """
-        if not self.database_manager.insert_document('history.%s' % self.db_collection, self.document, *args, **kwargs):
+        if not self.database_manager.insert_document(
+                'history.%s' % self.db_collection,
+                self.document.copy(),
+                *args,
+                **kwargs):
             self.logger.warning('Could not archive document "%s"' % self.path)
 
     def transmit(self, *args, **kwargs):
@@ -139,7 +150,11 @@ class BaseTask(object):
 
     def load(self, *args, **kwargs):
         """Load old dictionary from database"""
-        return self.database_manager.find_document(self.db_collection, self.db_query, *args, **kwargs)
+        return self.database_manager.find_document(
+                self.db_collection,
+                self.db_query,
+                *args,
+                **kwargs)
 
     """ Helper methods """
 
