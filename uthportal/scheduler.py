@@ -22,6 +22,8 @@ from apscheduler.jobstores.base import JobLookupError, ConflictingIdError
 
 from uthportal.logger import get_logger, logging_level
 
+LINE_SPLITTER = 80 * '-'
+
 class Scheduler(object):
     def __init__(self, tasks, intervals):
         self.logger = get_logger('scheduler', logging_level.DEBUG)
@@ -37,10 +39,10 @@ class Scheduler(object):
         self.tasks = self._flatten_dict(tasks, '')
 
         self.logger.debug('Tasks found:')
-        self.logger.debug( 70*'-' )
+        self.logger.debug(LINE_SPLITTER)
         for key in self.tasks:
-            self.logger.debug(key)
-        self.logger.debug( 70*'-' )
+            self.logger.debug('%s\t|\t%s' % (key, self.tasks[key].task_type))
+        self.logger.debug(LINE_SPLITTER)
 
         self.intervals = intervals
 
