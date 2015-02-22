@@ -31,12 +31,15 @@ class BaseTask(object):
         else:
             self.update()
 
-    def fetch(self, link):
+    def fetch(self, link, session=None, *args, **kwargs):
         """Fetch a remote document to be parsed later"""
+
+        if not session:
+            session = requests.Session()
 
         self.logger.debug('Fetching "%s" ...' % link)
         try:
-            page = requests.get(link, timeout=self.timeout)
+            page = session.get(link, *args, timeout=self.timeout, **kwargs)
         except ConnectionError:
             self.logger.warning('%s: Connection error' % link)
             return None
