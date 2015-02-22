@@ -150,11 +150,16 @@ class BaseTask(object):
 
     def load(self, *args, **kwargs):
         """Load old dictionary from database"""
-        return self.database_manager.find_document(
+        document = self.database_manager.find_document(
                 self.db_collection,
                 self.db_query,
                 *args,
                 **kwargs)
+
+        if document and '_id' in document:
+            del document['_id']
+
+        return document
 
     """ Helper methods """
 
