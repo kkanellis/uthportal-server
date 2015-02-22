@@ -16,3 +16,13 @@ def fix_urls(html, base_link):
 
     return unicode(bsoup)
 
+def get_soup(html):
+        """ Returns the BeautifulSoup object from the html """
+        bsoup = None
+        try:
+            bsoup = BeautifulSoup(html)
+        except Exception, e:
+            logger.error('Error while parsing html: %s' % e)
+
+        return bsoup
+

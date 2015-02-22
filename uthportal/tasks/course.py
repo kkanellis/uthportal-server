@@ -1,9 +1,11 @@
+from time import mktime
+from datetime import datetime
 
 import feedparser
 from bs4 import BeautifulSoup
 
 from uthportal.tasks.base import BaseTask
-from uthportal.util import fix_urls
+from uthportal.util import fix_urls, get_soup
 
 class CourseTask(BaseTask):
     task_type = 'CourseTask'
@@ -49,7 +51,7 @@ class CourseTask(BaseTask):
             self.warning('Fetch "%s" returned nothing' % link)
             return None
 
-        bsoup = self.__getsoup(html)
+        bsoup = get_soup(html)
         if not bsoup:
             self.warning('BeautifulSoup returned None')
             return None
@@ -102,7 +104,7 @@ class CourseTask(BaseTask):
             entries = [{
                         'title': entry.title,
                         'html': entry.description,
-                        'plaintext': __get_soup(entry.description).text,
+                        'plaintext': get_soup(entry.description).text,
                         'link': entry.link,
                         'date': datetime.fromtimestamp(mktime(entry.published_parsed)),
                         'has_time': True
@@ -130,14 +132,4 @@ class CourseTask(BaseTask):
                 entry['title'] = '%s - %s' % (self.id.upper(), entry_date_str)
 
         return entries
-
-    def __getsoup(self, html):
-        """ Returns the BeautifulSoup object from the html """
-        bsoup = None
-        try:
-            bsoup = BeautifulSoup(html)
-        except Exception, e:
-            self.logger.error('Error while parsing html: %s' % e)
-
-        return bsoup
 
