@@ -12,8 +12,8 @@ from uthportal.logger import get_logger, logging_level
 class BaseTask(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, path, timeout, database_manager, **kwargs):
-        self.logger = get_logger(path , logging_level.DEBUG)
+    def __init__(self, path, file_path, timeout, database_manager, **kwargs):
+        self.logger = get_logger(file_path, logging_level.DEBUG)
 
         self.path = path
         self.timeout = timeout

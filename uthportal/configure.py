@@ -11,7 +11,7 @@ settings = {
         'scheduler' : {
             'apscheduler' : { },
             'intervals' : {
-                'CourseTask' : { 'minutes' : 10 },
+                'CourseTask' : { 'minutes' : 5 },
                 'FoodmenuTask': { 'hours' : 1 }
             }
         },

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from uthportal.tasks.course import CourseTask
+from uthportal.logger import get_logger, logging_level
 
 class ce121(CourseTask):
     document_prototype = {

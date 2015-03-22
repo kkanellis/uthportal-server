@@ -136,6 +136,31 @@ class Scheduler(object):
         except JobLookupError, e:
             self.logger.warning(e)
 
+    def force_update(self, job_id = None):
+        """ Updates a job with id == job_id, or all jobs if no id is given """
+        if not isinstance(self.sched, BaseScheduler):
+            self.logger.warning('Scheduler is not initialized')
+            return
+
+        if job_id == None:
+            self.logger.info("Forcing update of all jobs")
+            for job in self.sched.get_jobs():
+                self.__run_job(job)
+        else :
+            self.logger.info("Forcing update of job %s" % job_id)
+            job = self.sched.get_job(job_id)
+            if job != None :
+                self.__run_job(job)
+            else :
+                self.logger.warn("Job %s not found" % job_id)
+
+    def __run_job(self, job):
+        func = job.func()
+        if func != None :
+            func()
+        else :
+            self.logger.warn("Job %s has a None type callable func" % job.id)
+
     def _flatten_dict(self, d, path):
         new_dict = { }
         for key in d:

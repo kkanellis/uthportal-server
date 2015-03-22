@@ -13,7 +13,7 @@ from inspect import getmembers, isclass
 
 class UthPortal(object):
     def __init__(self, settings):
-        self.logger = get_logger(__name__, logging_level.DEBUG)
+        self.logger = get_logger(__file__, logging_level.DEBUG)
         self.settings = settings
 
         if not ('scheduler' in self.settings and 'database' in self.settings):
@@ -26,7 +26,8 @@ class UthPortal(object):
         self.scheduler = None
 
     def load_tasks(self):
-        full_libary_path = os.path.dirname(os.path.abspath(__file__)) + '/' + self.settings['library_path']
+        current_path =  os.path.dirname(os.path.abspath(__file__))
+        full_libary_path = current_path + '/' + self.settings['library_path']
         self.logger.info('Modules will be loaded from "%s"' % full_libary_path)
 
         tasks = {}
@@ -46,7 +47,7 @@ class UthPortal(object):
                     if isclass(obj) and (name in current_module.__name__):
                         self.logger.info('Importing: %s object: %s' %(name, obj))
                         class_name = name
-                        instance = obj(current_module.__name__,10, self.db_manager)
+                        instance = obj(current_module.__name__, current_path + '/' + name, 10, self.db_manager)
 
                 modules = module.split('.')
                 current_task = tasks
@@ -99,6 +100,9 @@ class UthPortal(object):
 
         self.logger.debug('Scheduler started successfully!')
 
+    def _force_update(self, job_id = None):
+        self.scheduler.force_update(job_id)
+
     def _stop_scheduler(self):
         pass
 
@@ -130,6 +134,8 @@ def main():
     uth_portal = UthPortal(settings)
     uth_portal.load_tasks()
     uth_portal.start()
+
+    uth_portal._force_update()
 
     while True:
         sleep(2)
