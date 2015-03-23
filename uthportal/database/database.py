@@ -32,6 +32,11 @@ class IDatabaseManager(object):
         return
 
     @abstractmethod
+    def find_documents(self, collection, query, **kwargs):
+        """ Finds and returns all entries/documents from a table/collection. """
+        return
+
+    @abstractmethod
     def update_document(self, collection, query, document, **kwargs):
         """ Updates an existing document with new data """
         return

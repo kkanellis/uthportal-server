@@ -104,6 +104,19 @@ class MongoDatabaseManager(IDatabaseManager):
 
         return document
 
+
+    @_requires_client
+    def find_documents(self, collection, query, **kwargs):
+        documents = None
+        try:
+            documents = self.db[collection].find(query, **kwargs)
+        except OperationFailure, e:
+            self.logger.error('OperationFailure: Cannot find documents into "%s": %s' % (collection, unicode(e)))
+            return None
+
+        return documents
+
+
     @_requires_client
     def update_document(self, collection, query, document, **kwargs):
 
