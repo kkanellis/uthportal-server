@@ -106,7 +106,7 @@ class MongoDatabaseManager(IDatabaseManager):
 
 
     @_requires_client
-    def find_documents(self, collection, query, **kwargs):
+    def find_documents(self, collection, query = {}, **kwargs):
         documents = None
         try:
             documents = self.db[collection].find(query, **kwargs)

@@ -15,6 +15,10 @@ settings = {
                 'FoodmenuTask': { 'hours' : 1 }
             }
         },
+        'server' : {
+            'host' : '127.0.0.1',
+            'port' : 5000,
+        },
         'library_path' : 'uthportal/library'
 }
 
