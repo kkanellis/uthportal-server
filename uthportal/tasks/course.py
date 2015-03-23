@@ -1,15 +1,17 @@
+from time import mktime
+from datetime import datetime
 
 import feedparser
 from bs4 import BeautifulSoup
 
 from uthportal.tasks.base import BaseTask
-from uthportal.util import fix_urls
+from uthportal.util import fix_urls, get_soup
 
 class CourseTask(BaseTask):
     task_type = 'CourseTask'
 
-    def __init__(self, path, timeout, database_manager):
-        super(CourseTask, self).__init__(path, timeout, database_manager)
+    def __init__(self, path, file_path, timeout, database_manager):
+        super(CourseTask, self).__init__(path, file_path, timeout, database_manager)
 
         self.update_fields =[ 'announcements.site', 'announcements.eclass' ]
         self.db_query = { 'code' : self.id }
@@ -51,7 +53,7 @@ class CourseTask(BaseTask):
             self.warning('Fetch "%s" returned nothing' % link)
             return None
 
-        bsoup = self.__getsoup(html)
+        bsoup = get_soup(html)
         if not bsoup:
             self.warning('BeautifulSoup returned None')
             return None
@@ -59,13 +61,13 @@ class CourseTask(BaseTask):
         try:
             entries = self.parse_site(bsoup)
         except Exception, e:
-            self.logger.error(e)
+            self.logger.error('parse_site: %s', unicode(e))
             return None
 
         try:
             entries = self.postprocess_site(entries, link)
         except Exception, e:
-            self.logger.error(e)
+            self.logger.error('post_process: %s', unicode(e))
             return None
 
         return entries
@@ -78,7 +80,7 @@ class CourseTask(BaseTask):
 
         html = self.fetch(link)
         if not html:
-            self.warning('Fetch "%s" returned nothing' % link)
+            self.logger.warning('Fetch "%s" returned nothing' % link)
             return None
 
         return self.parse_eclass(html)
@@ -104,7 +106,7 @@ class CourseTask(BaseTask):
             entries = [{
                         'title': entry.title,
                         'html': entry.description,
-                        'plaintext': __get_soup(entry.description).text,
+                        'plaintext': get_soup(entry.description).text,
                         'link': entry.link,
                         'date': datetime.fromtimestamp(mktime(entry.published_parsed)),
                         'has_time': True
@@ -118,20 +120,18 @@ class CourseTask(BaseTask):
         return entries
 
     def postprocess_site(self, entries, base_link):
-        """Process the document before saving"""
+        """ Process the document before saving
+            For each entry:
+                a) convert all relative links to absolute ones
+                b) adds a title if no title is present
+        """
 
         for entry in entries:
             entry['html'] = fix_urls(entry['html'], base_link)
 
+            if 'title' not in entry:
+                entry_date_str = entry['date'].strftime('%2d/%2m/%4Y')
+                entry['title'] = '%s - %s' % (self.id.upper(), entry_date_str)
+
         return entries
-
-    def __getsoup(self, html):
-        """ Returns the BeautifulSoup object from the html """
-        bsoup = None
-        try:
-            bsoup = BeautifulSoup(html)
-        except Exception, e:
-            self.logger.error('Error while parsing html: %s' % e)
-
-        return bsoup
 

@@ -22,6 +22,8 @@ from apscheduler.jobstores.base import JobLookupError, ConflictingIdError
 
 from uthportal.logger import get_logger, logging_level
 
+LINE_SPLITTER = 80 * '-'
+
 class Scheduler(object):
     def __init__(self, tasks, intervals):
         self.logger = get_logger('scheduler', logging_level.DEBUG)
@@ -37,10 +39,10 @@ class Scheduler(object):
         self.tasks = self._flatten_dict(tasks, '')
 
         self.logger.debug('Tasks found:')
-        self.logger.debug( 70*'-' )
+        self.logger.debug(LINE_SPLITTER)
         for key in self.tasks:
-            self.logger.debug(key)
-        self.logger.debug( 70*'-' )
+            self.logger.debug('%s\t|\t%s' % (key, self.tasks[key].task_type))
+        self.logger.debug(LINE_SPLITTER)
 
         self.intervals = intervals
 
@@ -133,6 +135,31 @@ class Scheduler(object):
             self.sched.remove_job(id)
         except JobLookupError, e:
             self.logger.warning(e)
+
+    def force_update(self, job_id = None):
+        """ Updates a job with id == job_id, or all jobs if no id is given """
+        if not isinstance(self.sched, BaseScheduler):
+            self.logger.warning('Scheduler is not initialized')
+            return
+
+        if job_id == None:
+            self.logger.info("Forcing update of all jobs")
+            for job in self.sched.get_jobs():
+                self.__run_job(job)
+        else :
+            self.logger.info("Forcing update of job %s" % job_id)
+            job = self.sched.get_job(job_id)
+            if job != None :
+                self.__run_job(job)
+            else :
+                self.logger.warn("Job %s not found" % job_id)
+
+    def __run_job(self, job):
+        func = job.func()
+        if func != None :
+            func()
+        else :
+            self.logger.warn("Job %s has a None type callable func" % job.id)
 
     def _flatten_dict(self, d, path):
         new_dict = { }

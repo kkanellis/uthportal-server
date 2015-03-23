@@ -8,7 +8,6 @@ class logging_level:
         INFO = logging.INFO
 
 
-        #!/usr/bin/env python
 def split_filepath(filepath):
     filepath = os.path.abspath(filepath) #ensure we got path
     dirname, filename = os.path.split(filepath)
@@ -33,11 +32,14 @@ def get_logger(filepath, level):
     ch = logging.StreamHandler()
     ch.setLevel(level)
 
-    formatter = ColoredFormatter(
+    console_formatter = ColoredFormatter(
+            "%(asctime)s: [%(levelname)s] [%(name)s] %(message)s",  "%Y-%m-%d %H:%M:%S")
+
+    file_formatter = ColoredFormatter(
             "%(asctime)s: [%(levelname)s] %(message)s",  "%Y-%m-%d %H:%M:%S")
 
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
+    fh.setFormatter(file_formatter)
+    ch.setFormatter(console_formatter)
 
     logger.addHandler(fh)
     logger.addHandler(ch)

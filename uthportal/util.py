@@ -14,5 +14,15 @@ def fix_urls(html, base_link):
         if a_tag.has_attr('href') and not urlparse(a_tag['href']).netloc:
             a_tag['href'] = urljoin(base_link, a_tag['href'])
 
-    return bsoup.encode('utf8')
+    return unicode(bsoup)
+
+def get_soup(html):
+        """ Returns the BeautifulSoup object from the html """
+        bsoup = None
+        try:
+            bsoup = BeautifulSoup(html)
+        except Exception, e:
+            logger.error('Error while parsing html: %s' % e)
+
+        return bsoup
 

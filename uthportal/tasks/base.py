@@ -12,8 +12,8 @@ from uthportal.logger import get_logger, logging_level
 class BaseTask(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, path, timeout, database_manager, **kwargs):
-        self.logger = get_logger(path , logging_level.DEBUG)
+    def __init__(self, path, file_path, timeout, database_manager, **kwargs):
+        self.logger = get_logger(file_path, logging_level.DEBUG)
 
         self.path = path
         self.timeout = timeout
@@ -31,12 +31,15 @@ class BaseTask(object):
         else:
             self.update()
 
-    def fetch(self, link):
+    def fetch(self, link, session=None, *args, **kwargs):
         """Fetch a remote document to be parsed later"""
+
+        if not session:
+            session = requests.Session()
 
         self.logger.debug('Fetching "%s" ...' % link)
         try:
-            page = requests.get(link, timeout=self.timeout)
+            page = session.get(link, *args, timeout=self.timeout, **kwargs)
         except ConnectionError:
             self.logger.warning('%s: Connection error' % link)
             return None
@@ -50,6 +53,7 @@ class BaseTask(object):
 
         self.logger.debug('Fetched successfully! [%d]' % page.status_code)
 
+        # Change page encoding to utf-8 so no more unicode handler is needed
         page.encoding = 'utf-8'
         return page.text
 
@@ -117,12 +121,22 @@ class BaseTask(object):
 
     def save(self, *args, **kwargs):
         """Save result dictionary in database"""
-        if not self.database_manager.update_document(self.db_collection, self.db_query, self.document, *args, upsert=True, **kwargs):
+        if not self.database_manager.update_document(
+                self.db_collection,
+                self.db_query,
+                self.document.copy(),
+                upsert=True,
+                *args,
+                **kwargs):
             self.logger.warning('Could not save document "%s"' % self.path)
 
     def archive(self, *args, **kwargs):
         """ Save the current document into the history collection """
-        if not self.database_manager.insert_document('history.%s' % self.db_collection, self.document, *args, **kwargs):
+        if not self.database_manager.insert_document(
+                'history.%s' % self.db_collection,
+                self.document.copy(),
+                *args,
+                **kwargs):
             self.logger.warning('Could not archive document "%s"' % self.path)
 
     def transmit(self, *args, **kwargs):
@@ -139,7 +153,16 @@ class BaseTask(object):
 
     def load(self, *args, **kwargs):
         """Load old dictionary from database"""
-        return self.database_manager.find_document(self.db_collection, self.db_query, *args, **kwargs)
+        document = self.database_manager.find_document(
+                self.db_collection,
+                self.db_query,
+                *args,
+                **kwargs)
+
+        if document and '_id' in document:
+            del document['_id']
+
+        return document
 
     """ Helper methods """
 

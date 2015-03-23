@@ -74,7 +74,7 @@ class MongoDatabaseManager(IDatabaseManager):
         try:
             self.db[collection].insert(document, **kwargs)
         except OperationFailure, e:
-            self.logger.error('OperationFailure: Cannot insert a document into "%s"' % collection)
+            self.logger.error('OperationFailure: Cannot insert a document into "%s": %s' % (collection, unicode(e)))
             return False
 
         return True
@@ -85,8 +85,8 @@ class MongoDatabaseManager(IDatabaseManager):
 
         try:
             self.db[collection].remove(query, **kwargs)
-        except OperationFailure:
-            self.logger.error('OperationFailure: Cannot remove a document into "%s"' % collection)
+        except OperationFailure, e:
+            self.logger.error('OperationFailure: Cannot remove a document into "%s": %s' % (collection, unicode(e)))
             return False
 
         return True
@@ -98,22 +98,35 @@ class MongoDatabaseManager(IDatabaseManager):
         document = None
         try:
             document = self.db[collection].find_one(query, **kwargs)
-        except OperationFailure:
-            self.logger.error('OperationFailure: Cannot find a document into "%s"' % collection)
+        except OperationFailure, e:
+            self.logger.error('OperationFailure: Cannot find a document into "%s": %s' % (collection, unicode(e)))
             return None
 
         return document
+
+
+    @_requires_client
+    def find_documents(self, collection, query = {}, **kwargs):
+        documents = None
+        try:
+            documents = self.db[collection].find(query, **kwargs)
+        except OperationFailure, e:
+            self.logger.error('OperationFailure: Cannot find documents into "%s": %s' % (collection, unicode(e)))
+            return None
+
+        return documents
+
 
     @_requires_client
     def update_document(self, collection, query, document, **kwargs):
 
         try:
             self.db[collection].update(query, document, **kwargs)
-        except OperationFailure:
-            self.logger.error('OperationFailure: Cannot remove a document into "%s"' % collection)
+        except OperationFailure, e:
+            self.logger.error('OperationFailure: Cannot update a document into "%s": %s' % (collection, unicode(e)))
             return False
-        except TypeError:
-            self.logger.error('TypeError: Check document(dict) & upsert(bool)')
+        except TypeError, e:
+            self.logger.error('TypeError: Check document(dict) & upsert(bool): %s', e)
             return False
 
         return True

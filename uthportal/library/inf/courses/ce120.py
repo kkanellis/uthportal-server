@@ -58,15 +58,16 @@ class ce120(CourseTask):
                 if part.name is 'span' or part.name is 'p':
                     break
 
-                html_parts.append( part.encode('utf8'))
+                part_u = unicode(part).strip()
+                html_parts.append(part_u)
                 if hasattr(part, 'text'):
-                    plaintext_parts.append( part.text.strip() )
+                    plaintext_parts.append(part.text.strip())
                 else:
-                    plaintext_parts.append( part )
+                    plaintext_parts.append(part_u)
 
             # convert list to unicode
-            html = (''.join( html_parts )).strip()
-            plaintext = (''.join( plaintext_parts )).strip()
+            html = (u' '.join( html_parts )).strip()
+            plaintext = (u' '.join( plaintext_parts )).strip()
 
             # Add the new announcement as dictionary
             announce_list.append( {'date':date, 'html':html, 'plaintext': plaintext, 'has_time': False } )
