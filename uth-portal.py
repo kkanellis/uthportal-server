@@ -46,7 +46,7 @@ class UthPortal(object):
                     if isclass(obj) and (name in current_module.__name__):
                         self.logger.info('Importing: %s object: %s' %(name, obj))
                         class_name = name
-                        instance = obj(current_module.__name__,10, self.db_manager)
+                        instance = obj(current_module.__name__, 10, self.db_manager)
 
                 modules = module.split('.')
                 current_task = tasks
@@ -59,8 +59,6 @@ class UthPortal(object):
                     current_task = current_task[task]
 
         self.tasks = tasks
-
-        self.logger.debug(tasks)
 
     def import_error(self, name):
         self.logger.error("Error importing module %s" % name)

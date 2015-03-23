@@ -26,6 +26,8 @@ class CourseTask(BaseTask):
                 self.logger.error('No document_prototype is available!')
                 return
 
+        self.logger.debug('id = {:<10} | collection = {:<35}'.format(self.id, self.db_collection))
+
     def update(self):
         new_document_fields = {
                 'announcements.site': self.__check_site(),
