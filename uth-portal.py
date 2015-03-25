@@ -23,8 +23,6 @@ class UthPortal(object):
 
         self.db_manager = MongoDatabaseManager(**self.settings['database'])
         self.db_manager.connect()
-        dicts = self.db_manager.find_documents("inf.courses", {})
-        print dicts
 
         self.scheduler = None
         self.server = None
