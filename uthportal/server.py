@@ -187,6 +187,8 @@ class Server(object):
 
         self.logger.info("Server stopped.")
 
+    def is_running(self):
+        return self.__is_running
 
     def __start_flask(self):
         server_settings = self.settings['server']
