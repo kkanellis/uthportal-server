@@ -42,7 +42,7 @@ class ce213(CourseTask):
 
         # Find all dates
         dates = bsoup.select('li h3 > font')
-        dates = [ datetime.strptime(date.text.strip(' .'), '%d.%m.%Y')
+        dates = [ datetime.strptime(date.text.strip(' .').replace('.','/'), '%d/%m/%Y')
                     for date in dates ]
 
         return [{   'date': date,

@@ -32,10 +32,10 @@ def get_logger(filepath, level):
     ch = logging.StreamHandler()
     ch.setLevel(level)
 
-    file_formatter = ColoredFormatter(
+    console_formatter = ColoredFormatter(
             "%(asctime)s: [%(levelname)s] [%(name)s] %(message)s",  "%Y-%m-%d %H:%M:%S")
 
-    console_formatter = ColoredFormatter(
+    file_formatter = ColoredFormatter(
             "%(asctime)s: [%(levelname)s] %(message)s",  "%Y-%m-%d %H:%M:%S")
 
     fh.setFormatter(file_formatter)

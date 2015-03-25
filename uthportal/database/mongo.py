@@ -92,7 +92,7 @@ class MongoDatabaseManager(IDatabaseManager):
         return True
 
     @_requires_client
-    def find_document(self, collection, query, **kwargs):
+    def find_document(self, collection, query = {}, **kwargs):
         # Since we are interested in one document, find_one is used.
 
         document = None

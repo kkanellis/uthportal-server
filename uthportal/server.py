@@ -53,7 +53,8 @@ def show_courses():
 
 @app.route('/inf/courses/<course_name>')
 def show_course(course_name):
-    db_doc = db.inf.courses.find_one({'code':course_name })
+    db_manager = app.config['db_manager']
+    db_doc = db_manager.find_document('inf.courses', {'code':course_name })
 
     if isinstance(db_doc, dict):
         db_doc = make_prod(db_doc)
@@ -63,7 +64,8 @@ def show_course(course_name):
 
 @app.route('/inf/announce/<type>')
 def show_inf_announcements(type):
-    db_doc = db.inf.announce.find_one({'type': type})
+    db_manager = app.config['db_manager']
+    db_doc = db_manager.find_document('inf.announce', {'type': type})
 
     if isinstance(db_doc, dict):
         db_doc = make_prod(db_doc)
@@ -73,7 +75,8 @@ def show_inf_announcements(type):
 
 @app.route('/inf/schedule')
 def show_inf_schedule():
-    db_doc = db.inf.schedule.find_one()
+    db_manager = app.config['db_manager']
+    db_doc = db_manager.find_document('inf.schedule')
 
     if isinstance(db_doc, dict):
         db_doc = make_prod(db_doc)
@@ -83,7 +86,8 @@ def show_inf_schedule():
 
 @app.route('/uth/rss/<type>')
 def show_uth_announcements(type):
-    db_doc = db.uth.rss.find_one({'type': type})
+    db_manager = app.config['db_manager']
+    db_doc = db_manager.find_document('uth.rss', {'type': type})
 
     if isinstance(db_doc, dict):
         db_doc = make_prod(db_doc)
@@ -93,10 +97,13 @@ def show_uth_announcements(type):
 
 @app.route('/uth/foodmenu')
 def show_food_menu():
+    db_manager = app.config['db_manager']
+
     _monday = (datetime.now() - timedelta(datetime.now().weekday())).date()
     last_monday = datetime.combine(_monday, datetime.min.time() )
 
-    db_doc = db.uth.food_menu.find_one({'date':last_monday })
+    db_doc = db_manager.find_document('uth.food_menu', {'date':last_monday })
+
     if isinstance(db_doc, dict):
         db_doc = make_prod(db_doc)
         return flask.jsonify(db_doc)
@@ -108,7 +115,6 @@ def make_prod(doc):
     """
     Removed the unesseccery fields for production out.
     NOTE: Also removes 'last_updated' field in order for the client notifications to work
-    TODO: Find an alternative for notifications!
     """
     remove_fields = [ 'last_updated', '_id', 'announcements.last_updated' ]
 
@@ -145,6 +151,10 @@ def not_implemented(error):
 
 
 class Server(object):
+    """
+    An object-oriented wrapper for the flask-server
+    """
+
     def __init__(self, database_manager, settings):
         self.logger = get_logger(__file__, logging_level.DEBUG)
         self.settings = settings

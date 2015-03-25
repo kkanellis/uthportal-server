@@ -141,7 +141,7 @@ def main():
     uth_portal.load_tasks()
     uth_portal.start()
 
-    #uth_portal._force_update()
+    uth_portal._force_update()
     while True:
         sleep(2)
 
