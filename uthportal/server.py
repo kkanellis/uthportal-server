@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from operator import itemgetter
 
-from logger import get_logger, logging_level
+from logger import get_logger
 
 HTTPCODE_NOT_FOUND = 404
 HTTPCODE_NOT_IMPLEMENTED = 501
@@ -156,8 +156,8 @@ class Server(object):
     """
 
     def __init__(self, database_manager, settings):
-        self.logger = get_logger(__file__, logging_level.DEBUG)
         self.settings = settings
+        self.logger = get_logger(__file__, self.settings)
         self.__database_manager = database_manager
 
         self.__process = None

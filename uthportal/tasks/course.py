@@ -11,8 +11,8 @@ from uthportal.util import fix_urls, get_soup
 class CourseTask(BaseTask):
     task_type = 'CourseTask'
 
-    def __init__(self, path, file_path, timeout, database_manager):
-        super(CourseTask, self).__init__(path, file_path, timeout, database_manager)
+    def __init__(self, path, file_path, settings, database_manager):
+        super(CourseTask, self).__init__(path, file_path, settings, database_manager)
 
         self.update_fields =[ 'announcements.site', 'announcements.eclass' ]
         self.db_query = { 'code' : self.id }

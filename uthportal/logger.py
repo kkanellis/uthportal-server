@@ -1,25 +1,37 @@
 import logging
 import os
 
-class logging_level:
-        WARN = logging.WARN
-        DEBUG = logging.DEBUG
-        ERROR = logging.ERROR
-        INFO = logging.INFO
+level_dict = {
+        'WARN': logging.WARN,
+        'DEBUG': logging.DEBUG,
+        'ERROR': logging.ERROR,
+        'INFO': logging.INFO
+}
 
 
 def split_filepath(filepath):
-    filepath = os.path.abspath(filepath) #ensure we got path
+    filepath = os.path.abspath(filepath)
     dirname, filename = os.path.split(filepath)
     filename = os.path.splitext(filename)[0]
-    dirname = dirname + "/logs"
     return dirname, filename
 
+def get_level(name, settings_level):
+    if name in settings_level:
+        return level_dict[settings_level[name]]
 
-def get_logger(filepath, level):
+    return level_dict[settings_level['default']]
+
+
+def get_logger(filepath, settings):
     """Creates a custom logger with date and time"""
 
     folder, name = split_filepath(filepath)
+
+    if 'log_dir' in settings:
+        folder = settings['log_dir']
+
+    level = get_level(name, settings['logger']['levels'])
+
     if not os.path.exists(folder):
         os.makedirs(folder)
 

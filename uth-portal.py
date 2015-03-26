@@ -2,25 +2,27 @@
 
 from os.path import dirname, abspath
 from pkgutil import walk_packages, iter_modules
-from importlib import import_module
 from inspect import getmembers, isclass
 
-from uthportal.configure import settings
-from uthportal.logger import get_logger, logging_level
+from uthportal.configure import Configuration
+from uthportal.logger import get_logger
 from uthportal.database.mongo import MongoDatabaseManager
 from uthportal.scheduler import Scheduler
 from uthportal.server import Server
 
 class UthPortal(object):
-    def __init__(self, settings):
-        self.logger = get_logger(__file__, logging_level.DEBUG)
-        self.settings = settings
 
+    def __init__(self):
+        self.configuration = Configuration()
+        self.settings = self.configuration.get_settings()
+        self.logger = get_logger(__file__, self.settings)
+
+       #TODO: Do this check in configuration manager
         if 'scheduler' not in self.settings and 'database' not in self.settings:
             self.logger.error('Missing keys from settings [database, scheduler]')
             return
 
-        self.db_manager = MongoDatabaseManager(**self.settings['database'])
+        self.db_manager = MongoDatabaseManager(self.settings)
         self.db_manager.connect()
 
         self.load_tasks()
@@ -28,7 +30,7 @@ class UthPortal(object):
         self.server = Server(self.db_manager, self.settings)
         self.scheduler = Scheduler(
                 self.tasks,
-                self.settings['scheduler']['intervals'])
+                self.settings)
 
 
     def load_tasks(self):
@@ -39,7 +41,7 @@ class UthPortal(object):
         tasks = {}
         for loader, module, is_pkg in walk_packages(
                 [full_libary_path],
-                onerror = self.import_error):
+                onerror = self._import_error):
             #Load next package
             current_module = loader.find_module(module).load_module(module)
 
@@ -57,7 +59,8 @@ class UthPortal(object):
                         class_name = name
                         instance = obj(current_module.__name__,
                                         current_path + '/' + name,
-                                        10, self.db_manager)
+                                        self.settings,
+                                        self.db_manager)
 
                 modules = module.split('.')
 
@@ -72,7 +75,7 @@ class UthPortal(object):
 
         self.tasks = tasks
 
-    def import_error(self, name):
+    def _import_error(self, name):
         self.logger.error("Error importing module %s" % name)
         error_type, value, traceback = sys.exc_info()
         self.logger.error(traceback)
@@ -84,7 +87,7 @@ class UthPortal(object):
     def stop(self):
         self.db_manager.disconnect()
         self._stop_server()
-        self.save_settings()
+        self._save_settings()
 
     def restart(self):
         self.stop_server()
@@ -111,11 +114,13 @@ class UthPortal(object):
     def _stop_scheduler(self):
         pass
 
-    def load_settings(self):
-        pass
+    def _load_settings(self):
+        self.configuration.load_settings()
+        self.settings = self.configuration.get_settings()
 
-    def save_settings(self):
-        pass
+    def _save_settings(self):
+        self.configuration.set_settings(self.settings)
+        self.configuration.save_settings()
 
 
 import signal
@@ -135,7 +140,7 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
 
     global uth_portal
-    uth_portal = UthPortal(settings)
+    uth_portal = UthPortal()
     uth_portal.start()
 
     uth_portal._force_update()

@@ -4,9 +4,9 @@ from urlparse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
-from uthportal.logger import get_logger, logging_level
-
-logger = get_logger(__name__, logging_level.DEBUG)
+def truncate_str(data, length):
+    length -= 2
+    return (data[:length] + '...') if len(data) > length else data
 
 def fix_urls(html, base_link):
     bsoup = BeautifulSoup(html)
@@ -24,7 +24,8 @@ def get_soup(html):
         try:
             bsoup = BeautifulSoup(html)
         except Exception, e:
-            logger.error('Error while parsing html: %s' % e)
+            #Find a solution for this
+            print('Error while parsing html: %s' % e)
 
         return bsoup
 

@@ -6,16 +6,18 @@ import requests
 from requests.exceptions import ConnectionError, Timeout
 
 from uthportal.database.mongo import MongoDatabaseManager
-from uthportal.logger import get_logger, logging_level
+from uthportal.logger import get_logger
+from uthportal.util import truncate_str
 
 class BaseTask(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, path, file_path, timeout, database_manager, **kwargs):
-        self.logger = get_logger(file_path, logging_level.DEBUG)
+    def __init__(self, path, file_path, settings, database_manager, **kwargs):
+        self.settings = settings
+        self.logger = get_logger(file_path, self.settings)
 
         self.path = path
-        self.timeout = timeout
+        self.timeout = self.settings['network']['timeout']
         self.database_manager = database_manager
 
         self.id = path.split('.')[-1]
@@ -86,7 +88,12 @@ class BaseTask(object):
         differ = False
         for field in self.update_fields:
             if new_fields[field] and old_fields[field] != new_fields[field]:
-                self.logger.info('New entries in field "%s"' % new_fields[field])
+                self.logger.debug(
+                        truncate_str(
+                            'New entries in field "%s"' % new_fields[field],
+                            150)
+                        )
+
                 differ = True
                 break
 

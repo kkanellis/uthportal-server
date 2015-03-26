@@ -6,8 +6,8 @@ from uthportal.util import get_soup
 class AnnouncementTask(BaseTask):
     task_type = 'AnnouncementTask'
 
-    def __init__(self, path, file_path, timeout, database_manager, **kwargs):
-        super(AnnouncementTask, self).__init__(path, file_path, timeout, database_manager)
+    def __init__(self, path, file_path, settings, database_manager, **kwargs):
+        super(AnnouncementTask, self).__init__(path, file_path, settings, database_manager)
 
         self.update_fields =['announcements']
         self.logger.debug('Loading document from database...')

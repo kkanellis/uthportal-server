@@ -3,29 +3,26 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, OperationFailure
 
 from uthportal.database.database import IDatabaseManager
-from uthportal.logger import get_logger, logging_level
+from uthportal.logger import get_logger
 
 class MongoDatabaseManager(IDatabaseManager):
 
-    def __init__(self, **kwargs):
+    def __init__(self, settings, **kwargs):
         """
         Neccessary keys are: host, port & db_name .
         TODO: Maybe use named arguments or get with default values?
         """
-        self.logger = get_logger('dbmanager', logging_level.DEBUG)
+        self.settings = settings
+        self.logger = get_logger(__file__, self.settings)
 
         self.client = None
 
-        if not all(key in kwargs for key in ('host', 'port', 'db_name')):
-            self.logger.error('Some necessary kwargs (host, port, db_name) are missing')
-            return
-
-        self.info = kwargs
+        self.info = self.settings['database']
 
     def _requires_client(function):
         def new_func(self, *args, **kwargs):
             if not self.client:
-                self.logger.error('Cannot complete action: [%s], database not connected' % func.__name__)
+                self.logger.error('Cannot complete action: [%s], database not connected' % function.__name__)
                 return False
             else:
                 return function(self, *args, **kwargs)
