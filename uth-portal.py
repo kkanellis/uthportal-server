@@ -23,6 +23,8 @@ class UthPortal(object):
         self.db_manager = MongoDatabaseManager(**self.settings['database'])
         self.db_manager.connect()
 
+        self.load_tasks()
+
         self.server = Server(self.db_manager, self.settings)
         self.scheduler = Scheduler(
                 self.tasks,
@@ -134,7 +136,6 @@ def main():
 
     global uth_portal
     uth_portal = UthPortal(settings)
-    uth_portal.load_tasks()
     uth_portal.start()
 
     uth_portal._force_update()

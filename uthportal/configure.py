@@ -12,7 +12,8 @@ settings = {
             'apscheduler' : { },
             'intervals' : {
                 'CourseTask' : { 'minutes' : 5 },
-                'FoodmenuTask': { 'hours' : 1 }
+                'FoodmenuTask': { 'hours' : 1 },
+                'AnnouncementTask': { 'minutes' : 30 }
             }
         },
         'server' : {

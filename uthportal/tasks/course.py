@@ -1,5 +1,6 @@
 from time import mktime
 from datetime import datetime
+from abc import ABCMeta, abstractmethod
 
 import feedparser
 from bs4 import BeautifulSoup
@@ -85,7 +86,8 @@ class CourseTask(BaseTask):
 
         return self.parse_eclass(html)
 
-    @abstractmethod
+#This is commented out only for testing and shouldn't.
+#    @abstractmethod
     def parse_site(self, bsoup):
         """Parse the fetced document"""
         return None

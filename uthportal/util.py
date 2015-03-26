@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from datetime import datetime
 from urlparse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
@@ -26,3 +28,24 @@ def get_soup(html):
 
         return bsoup
 
+def parse_greek_date(date_str):
+    '''
+    Parses a unicode string that containts a greek date into a
+    datetime object
+    '''
+
+    date_str = date_str.strip()
+    date_str = date_str.replace( u'Ιαν', 'Jan' )
+    date_str = date_str.replace( u'Φεβ', 'Feb' )
+    date_str = date_str.replace( u'Μαρ', 'Mar' )
+    date_str = date_str.replace( u'Απρ', 'Apr' )
+    date_str = date_str.replace( u'Μάι', 'May' )
+    date_str = date_str.replace( u'Ιουν', 'Jun' )
+    date_str = date_str.replace( u'Ιουλ', 'Jul' )
+    date_str = date_str.replace( u'Αυγ', 'Aug' )
+    date_str = date_str.replace( u'Σεπ', 'Sep' )
+    date_str = date_str.replace( u'Οκτ', 'Oct' )
+    date_str = date_str.replace( u'Νοε', 'Nov' )
+    date_str = date_str.replace( u'Δεκ', 'Dec' )
+
+    return datetime.strptime(date_str, '%d %b, %Y')
