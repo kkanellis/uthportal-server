@@ -1,4 +1,3 @@
-import logging
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 
@@ -32,7 +31,10 @@ class BaseTask(object):
             self.update()
 
     def fetch(self, link, session=None, *args, **kwargs):
-        """Fetch a remote document to be parsed later"""
+        """
+        Fetch a remote document to be parsed later.
+        This function is called as is from subclasses
+        """
 
         if not session:
             session = requests.Session()

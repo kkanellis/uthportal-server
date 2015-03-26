@@ -85,6 +85,7 @@ class CourseTask(BaseTask):
 
         return self.parse_eclass(html)
 
+    @abstractmethod
     def parse_site(self, bsoup):
         """Parse the fetced document"""
         return None
