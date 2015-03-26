@@ -12,8 +12,6 @@ class AnnouncementTask(BaseTask):
         self.update_fields =['announcements']
         self.logger.debug('Loading document from database...')
 
-        self.db_query = {}
-
         self.document = self.load()
         if not self.document:
             if hasattr(self, 'document_prototype'):
