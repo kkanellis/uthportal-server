@@ -4,8 +4,9 @@ from uthportal.util import parse_greek_date, get_soup
 class general(AnnouncementTask):
 
     document_prototype = {
-            'type' : 'general',
-            'announcements' : {}
+            'type': 'general',
+            'link': 'http://www.inf.uth.gr/cced/?cat=24',
+            'entries': [ ]
             }
 
     def __init__(self, path, file_path, timeout, database_manager, **kwargs):
