@@ -13,7 +13,8 @@ settings = {
             'intervals' : {
                 'CourseTask' : { 'minutes' : 5 },
                 'FoodmenuTask': { 'hours' : 1 }
-            }
+            },
+            'task_timeout': 10
         },
         'server' : {
             'host' : '127.0.0.1',
