@@ -51,12 +51,12 @@ class CourseTask(BaseTask):
 
         html = self.fetch(link)
         if not html:
-            self.warning('Fetch "%s" returned nothing' % link)
+            self.logger.warning('Fetch "%s" returned nothing' % link)
             return None
 
         bsoup = get_soup(html)
         if not bsoup:
-            self.warning('BeautifulSoup returned None')
+            self.logger.warning('BeautifulSoup returned None')
             return None
 
         try:

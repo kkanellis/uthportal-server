@@ -39,18 +39,20 @@ class AnnouncementTask(BaseTask):
         and call base update with the new fields
         """
 
-        html = self.fetch(self.link)
+        link = self.document['link']
+
+        html = self.fetch(link)
         if not html:
-            self.warning('Fetch "%s" returned nothing' % link)
+            self.logger.warning('Fetch "%s" returned nothing' % link)
             return None
 
         bsoup = get_soup(html)
         if not bsoup:
-            self.warning('BeautifulSoup returned None')
+            self.logger.warning('BeautifulSoup returned None')
             return None
 
         new_document_fields = {
-                'entries': self.parse(bsoup)
+            'entries': self.parse(bsoup)
         }
 
         # Check any new data exist
