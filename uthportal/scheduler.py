@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" gatherer.py: Contains Gatherer class which is the main uthportal project class.
+"""
+scheduler.py: Contains Scheduler class which is the main uthportal project class.
 
-Gatherer class contains all the logic to initialize and maintain the queue
+Scheduler class contains all the logic to initialize and maintain the queue
 as well as perform the neccessary operations on it.
-
-In order to initialize the Gatherer class the following interfaces must be
-passed as arguments:
-
-    DatabaseManager: Interface for database operations
-    PushNotificationManager: Interface for sending push notifications
-                                (planning for Android & WP8.1 )
-    *
 
 """
 import gevent
@@ -20,19 +13,22 @@ from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.base import JobLookupError, ConflictingIdError
 
-from uthportal.logger import get_logger, logging_level
+from uthportal.logger import get_logger
 
 LINE_SPLITTER = 80 * '-'
 
 class Scheduler(object):
-    def __init__(self, tasks, intervals):
-        self.logger = get_logger('scheduler', logging_level.DEBUG)
+    def __init__(self, tasks, settings):
+        self.settings = settings
+        self.logger = get_logger(__file__, self.settings)
+
+        self.intervals = self.settings['scheduler']['intervals']
 
         if not isinstance(tasks, dict):
             self.logger.error('tasks is not a dictionary')
             return
 
-        if not isinstance(intervals, dict):
+        if not isinstance(self.intervals, dict):
             self.logger.error('intervals is not a dictionary')
             return
 
@@ -44,7 +40,6 @@ class Scheduler(object):
             self.logger.debug('%s\t|\t%s' % (key, self.tasks[key].task_type))
         self.logger.debug(LINE_SPLITTER)
 
-        self.intervals = intervals
 
         #self.logger.debug('Checking tasks paths!')
         # TODO: Check if paths are valid
@@ -54,7 +49,7 @@ class Scheduler(object):
 
         self.logger.info('Initilizing APScheduler...')
 
-        ap_logger = get_logger('apscheduler', logging_level.DEBUG)
+        ap_logger = get_logger('apscheduler', self.settings)
         self.sched = BackgroundScheduler(logger=ap_logger, **apscheduler_kwargs)
 
         for (id, task) in self.tasks.items():

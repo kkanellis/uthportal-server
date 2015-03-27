@@ -1,14 +1,18 @@
+
+from abc import ABCMeta, abstractmethod
+
 import requests
 
 from uthportal.tasks.base import BaseTask
+from uthportal.util import get_soup
 
 class AnnouncementTask(BaseTask):
-    def __init__(self, path, timeout, database_manager):
-        super(AnnouncementTask, self).__init__(path, timeout, database_manager)
+    task_type = 'AnnouncementTask'
 
-        self.update_fields = [ 'entries' ]
-        self.db_query = { 'type' : self.id }
+    def __init__(self, path, file_path, settings, database_manager, **kwargs):
+        super(AnnouncementTask, self).__init__(path, file_path, settings, database_manager)
 
+        self.update_fields = ['entries']
         self.logger.debug('Loading document from database...')
 
         self.document = self.load()
@@ -21,24 +25,41 @@ class AnnouncementTask(BaseTask):
                 self.logger.error('No document_prototype is available!')
                 return
 
+        self.logger.debug('id = {:<10} | collection = {:<35}'.format(self.id, self.db_collection))
+
+
+    @abstractmethod
+    def parse(self, document):
+        """Parse the fetced document"""
+        return None
+
     def update(self):
+        """
+        Fetches the announcements site, parse it
+        and call base update with the new fields
+        """
+
+        html = self.fetch(self.link)
+        if not html:
+            self.warning('Fetch "%s" returned nothing' % link)
+            return None
+
+        bsoup = get_soup(html)
+        if not bsoup:
+            self.warning('BeautifulSoup returned None')
+            return None
+
         new_document_fields = {
-                'entries' : self._check_source()
+                'entries': self.parse(bsoup)
         }
 
         # Check any new data exist
-        if new_document_fields['entries']:
-            super(CourseTask, self).update(new_fields=new_document_fields)
+        if any( field_data for field_data in new_document_fields.items() ):
+            super(AnnouncementTask, self).update(new_fields=new_document_fields)
         else:
-            self.logger.warning('RSS returned no data')
+            self.logger.warning('No dictionary field contains new data.')
 
-    def _check_source(self):
-
-
-
-
-
-
+    # NOTE: Ignore atm
     def _make_auth(self, link, payload, session):
         """ Makes an http POST request in order to login where needed """
         try:
@@ -56,6 +77,7 @@ class AnnouncementTask(BaseTask):
 
         return auth_response
 
+    # NOTE: Ignore atm
     def _get_auth_info(self, type):
         query = { 'type' : type }
         document = self.database_manager.find_document('auth', query)
@@ -64,6 +86,4 @@ class AnnouncementTask(BaseTask):
             del document['_id']
         else:
             self.logger.error('No auth info found for type "%s"' % type)
-
-        return document
 

@@ -1,5 +1,6 @@
 from time import mktime
 from datetime import datetime
+from abc import ABCMeta, abstractmethod
 
 import feedparser
 from bs4 import BeautifulSoup
@@ -10,8 +11,8 @@ from uthportal.util import fix_urls, get_soup
 class CourseTask(BaseTask):
     task_type = 'CourseTask'
 
-    def __init__(self, path, file_path, timeout, database_manager):
-        super(CourseTask, self).__init__(path, file_path, timeout, database_manager)
+    def __init__(self, path, file_path, settings, database_manager):
+        super(CourseTask, self).__init__(path, file_path, settings, database_manager)
 
         self.update_fields =[ 'announcements.site', 'announcements.eclass' ]
         self.db_query = { 'code' : self.id }
@@ -85,6 +86,8 @@ class CourseTask(BaseTask):
 
         return self.parse_eclass(html)
 
+#This is commented out only for testing and shouldn't.
+#    @abstractmethod
     def parse_site(self, bsoup):
         """Parse the fetced document"""
         return None

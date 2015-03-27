@@ -1,10 +1,12 @@
+# -*- coding: utf-8 -*-
+from datetime import datetime
 from urlparse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
-from uthportal.logger import get_logger, logging_level
-
-logger = get_logger(__name__, logging_level.DEBUG)
+def truncate_str(data, length):
+    length -= 2
+    return (data[:length] + '...') if len(data) > length else data
 
 def fix_urls(html, base_link):
     bsoup = BeautifulSoup(html)
@@ -22,7 +24,29 @@ def get_soup(html):
         try:
             bsoup = BeautifulSoup(html)
         except Exception, e:
-            logger.error('Error while parsing html: %s' % e)
+            #Find a solution for this
+            print('Error while parsing html: %s' % e)
 
         return bsoup
 
+def parse_greek_date(date_str):
+    '''
+    Parses a unicode string that containts a greek date into a
+    datetime object
+    '''
+
+    date_str = date_str.strip()
+    date_str = date_str.replace( u'Ιαν', 'Jan' )
+    date_str = date_str.replace( u'Φεβ', 'Feb' )
+    date_str = date_str.replace( u'Μαρ', 'Mar' )
+    date_str = date_str.replace( u'Απρ', 'Apr' )
+    date_str = date_str.replace( u'Μάι', 'May' )
+    date_str = date_str.replace( u'Ιουν', 'Jun' )
+    date_str = date_str.replace( u'Ιουλ', 'Jul' )
+    date_str = date_str.replace( u'Αυγ', 'Aug' )
+    date_str = date_str.replace( u'Σεπ', 'Sep' )
+    date_str = date_str.replace( u'Οκτ', 'Oct' )
+    date_str = date_str.replace( u'Νοε', 'Nov' )
+    date_str = date_str.replace( u'Δεκ', 'Dec' )
+
+    return datetime.strptime(date_str, '%d %b, %Y')
