@@ -52,7 +52,7 @@ class BaseTask(object):
             return None
 
         if page.status_code is not (200 or 301):
-            self.logger.warning('%s: Returned [%d]' % (link, page.code))
+            self.logger.warning('%s: Returned [%d]' % (link, page.status_code))
             return None
 
         self.logger.debug('Fetched successfully! [%d]' % page.status_code)
