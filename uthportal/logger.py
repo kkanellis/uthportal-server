@@ -18,8 +18,8 @@ def split_filepath(filepath):
 def get_level(name, settings_level):
     if name in settings_level:
         return level_dict[settings_level[name]]
-
-    return level_dict[settings_level['default']]
+    else
+        return level_dict[settings_level['default']]
 
 
 def get_logger(filepath, settings):
