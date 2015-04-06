@@ -1,4 +1,5 @@
 import logging
+import logging.handlers
 import os
 
 level_dict = {
@@ -38,7 +39,10 @@ def get_logger(filepath, settings):
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
-    fh = logging.FileHandler(folder + '/' + name + '.log');
+    fh = logging.handlers.RotatingFileHandler(
+            folder + '/' + name + '.log',
+            maxBytes=settings['logger']['max_size'],
+            backupCount=settings['logger']['logs_backup_count'])
     fh.setLevel(level)
 
     ch = logging.StreamHandler()

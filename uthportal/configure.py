@@ -29,6 +29,8 @@ class Configuration(object):
                 'port' : 5000,
             },
             'logger': {
+                'max_size': 10000000,
+                'logs_backup_count': 3,
                 'levels': {
                     'default': 'DEBUG',
                     'mongo': 'DEBUG',
