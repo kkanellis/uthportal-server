@@ -35,7 +35,7 @@ def get_logger(filepath, settings):
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-    logger = logging.getLogger(filepath)
+    logger = logging.getLogger(name)
     logger.setLevel(level)
 
     fh = logging.FileHandler(folder + '/' + name + '.log');
