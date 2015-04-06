@@ -3,7 +3,7 @@ import json
 import os
 import sys
 
-from logger import get_logger
+from uthportal.logger import get_logger
 
 CONFIG_FILE = 'config.json'
 

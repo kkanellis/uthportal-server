@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 
 from os.path import dirname, abspath
 from pkgutil import walk_packages, iter_modules

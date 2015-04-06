@@ -18,7 +18,7 @@ def split_filepath(filepath):
 def get_level(name, settings_level):
     if name in settings_level:
         return level_dict[settings_level[name]]
-    else
+    else:
         return level_dict[settings_level['default']]
 
 
