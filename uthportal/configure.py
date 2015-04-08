@@ -43,7 +43,8 @@ class Configuration(object):
             'network': {
                 'timeout': 10
             },
-            'library_path' : 'uthportal/library'
+            'library_path': 'uthportal/library',
+            'tmp_path': 'uthportal/tmp'
     }
 
     def __init__(self):
