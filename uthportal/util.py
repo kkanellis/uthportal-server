@@ -29,6 +29,13 @@ def get_soup(html):
 
         return bsoup
 
+def date_to_datetime(date):
+    """
+    Converts date object to datetime, supported by MongoDB
+    """
+    return datetime.combine(date, datetime.min.time() )
+
+
 def parse_greek_date(date_str):
     '''
     Parses a unicode string that containts a greek date into a
