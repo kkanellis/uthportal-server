@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 
 from os import path
+from datetime import datetime, timedelta
 
 from uthportal.tasks.base import BaseTask
 
 class FoodmenuTask(BaseTask):
-    def __init__(self, database_manager):
-        super(FoodmenuTask, self).__init__(database_manager)
+    task_type = 'FoodmenuTask'
+
+    def __init__(self, path, file_path, settings, database_manager):
+        super(FoodmenuTask, self).__init__(path, file_path, settings, database_manager)
 
         self.update_fields = [ 'menu' ]
         self.db_query = { 'city' : self.id }
@@ -31,17 +34,17 @@ class FoodmenuTask(BaseTask):
         self.latest_monday = (datetime.now() - timedelta(datetime.now().weekday())).date()
 
         new_document_fields = {
-                'menu': self.__check_menu()
+            'menu': self.__check_menu()
         }
 
         # Check any new data exist
         if any( field_data for field_data in new_document_fields.items() ):
-            super(CourseTask, self).update(new_fields=new_document_fields)
+            super(FoodmenuTask, self).update(new_fields=new_document_fields)
         else:
             self.logger.warning('No dictionary field contains new data.')
 
     def __check_menu(self):
-        link = _get_document_field(self.document, 'link')
+        link = self._get_document_field(self.document, 'link')
         if not link:
             self.logger.error('"link" not found in document!')
             return None
@@ -66,8 +69,7 @@ class FoodmenuTask(BaseTask):
 
         return foodmenu
 
-
-    def convert_to_html(menu_doc):
+    def convert_to_html(self, menu_doc):
         """
         Uses soffice library ( used by LibreOffice & OpenOffice ) to convert
         the .doc file to the according .html one.
@@ -80,7 +82,7 @@ class FoodmenuTask(BaseTask):
         path_doc = path_prototype + '.doc'
         path_html = path_prototype + '.html'
 
-        with open(path_doc, 'rw') as f:
+        with open(path_doc, 'w') as f:
             f.write(menu_doc)
 
         if not path.exists(path_doc):
@@ -91,7 +93,7 @@ class FoodmenuTask(BaseTask):
         soffice_args = ['soffice', '--headless', '--convert-to', 'html:HTML', '--outdir', dir_name, doc_path ]
         ret_code = call(soffice_args)
 
-        if ret_code != 0 or not path.exists(path_html):
+        if ret_code != 0 or (not path.exists(path_html)):
             self.logger.error('Could not convert .doc to .html')
             return None
 
@@ -105,7 +107,7 @@ class FoodmenuTask(BaseTask):
 
         return html
 
-    def prettify(text):
+    def prettify(self, text):
         """
         Strips the starting and trailing whitespaces from text as well
         as the unecessary -multiple- whitspaces found between the words
@@ -133,5 +135,4 @@ class FoodmenuTask(BaseTask):
             pretty_text = pretty_text[:new_end]
 
         return pretty_text
-
 
