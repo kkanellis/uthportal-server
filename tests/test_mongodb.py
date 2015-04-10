@@ -8,7 +8,22 @@ class TestMongoManager(TestDatabase):
 
     def setUp(self):
         super(TestMongoManager, self).setUp()
-        self.manager = MongoDatabaseManager(host='localhost', port=27017, db_name='test_db')
+
+        settings = {
+                'database': {
+                    'host': 'localhost',
+                    'port': 27017,
+                    'db_name': 'test_db'
+                },
+                'logger': {
+                    'max_size': 10000000,
+                    'logs_backup_count': 3,
+                    'levels': {
+                        'mongo': 'DEBUG'
+                    }
+                }
+        }
+        self.manager = MongoDatabaseManager(settings)
 
     def tearDown(self):
         self.manager.drop_collection('test')

@@ -1,6 +1,8 @@
 
 import unittest
 
+from uthportal.configure import Configuration
+
 class TestDatabase(unittest.TestCase):
 
     def setUp(self):
