@@ -34,11 +34,17 @@ class AnnouncementTask(BaseTask):
         return None
 
     def update(self):
-        """
-        Fetches the announcements site, parse it
-        and call base update with the new fields
-        """
+        new_document_fields = {
+            'entries': self._check_source()
+        }
 
+        # Check any new data exist
+        if any( field_data for field_data in new_document_fields.items() ):
+            super(AnnouncementTask, self).update(new_fields=new_document_fields)
+        else:
+            self.logger.warning('No dictionary field contains new data.')
+
+    def _check_source(self):
         link = self.document['link']
 
         html = self.fetch(link)
@@ -51,15 +57,13 @@ class AnnouncementTask(BaseTask):
             self.logger.warning('BeautifulSoup returned None')
             return None
 
-        new_document_fields = {
-            'entries': self.parse(bsoup)
-        }
+        try:
+            entries = self.parse(bsoup)
+        except Exception, e:
+            self.logger.error('parse: %s' % unicode(e))
+            return None
 
-        # Check any new data exist
-        if any( field_data for field_data in new_document_fields.items() ):
-            super(AnnouncementTask, self).update(new_fields=new_document_fields)
-        else:
-            self.logger.warning('No dictionary field contains new data.')
+        return entries
 
     # NOTE: Ignore atm
     def _make_auth(self, link, payload, session):
