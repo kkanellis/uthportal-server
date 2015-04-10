@@ -19,6 +19,11 @@ class MongoDatabaseManager(IDatabaseManager):
 
         self.info = self.settings['database']
 
+        if (not self.info['host'] or
+            not self.info['port'] or
+            not self.info['db_name']):
+                self.logger.error('An argument is missing [host|port|db_name]')
+
     def _requires_client(function):
         def new_func(self, *args, **kwargs):
             if not self.client:

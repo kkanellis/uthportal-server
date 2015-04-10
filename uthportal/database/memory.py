@@ -48,6 +48,18 @@ class MemoryDatabaseManager(IDatabaseManager):
 
         return None
 
+    def find_documents(self, collection, query):
+        if collection not in self.db:
+            return None
+
+        documents = [ ]
+        for document in self.db[collection]:
+            if all( item in document and query[item] == document[item]
+                    for item in query ):
+                documents.append(document)
+
+        return documents
+
     def update_document(self, collection, query, new_document, multi=False):
         if collection not in self.db:
             return None
