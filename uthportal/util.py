@@ -66,22 +66,22 @@ def parse_greek_date(date_str):
     datetime object
     '''
     replacer = {
-            'Ιαν': 'Jan',
-            'Φεβ': 'Feb',
-            'Μαρ': 'Mar',
-            'Απρ': 'Apr',
-            'Μάι': 'May',
-            'Ιουν': 'Jun',
-            'Ιουλ': 'Jul',
-            'Αυγ': 'Aug',
-            'Σεπ': 'Sep',
-            'Οκτ': 'Oct',
-            'Νοε': 'Nov',
-            'Δεκ': 'Dec'
+            u'Ιαν': 'Jan',
+            u'Φεβ': 'Feb',
+            u'Μαρ': 'Mar',
+            u'Απρ': 'Apr',
+            u'Μάι': 'May',
+            u'Ιουν': 'Jun',
+            u'Ιουλ': 'Jul',
+            u'Αυγ': 'Aug',
+            u'Σεπ': 'Sep',
+            u'Οκτ': 'Oct',
+            u'Νοε': 'Nov',
+            u'Δεκ': 'Dec'
     }
 
     date_str = date_str.strip()
-    for (date_gr, date_en) in enumerate(replacer):
+    for (date_gr, date_en) in replacer.items():
         date_str = date_str.replace(date_gr, date_en)
 
     return datetime.strptime(date_str, '%d %b, %Y')
