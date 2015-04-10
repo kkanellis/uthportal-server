@@ -1,7 +1,11 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+from time import mktime
 from datetime import datetime
 from urlparse import urljoin, urlparse
 
+import feedparser
 from bs4 import BeautifulSoup
 
 def truncate_str(data, length):
@@ -19,15 +23,35 @@ def fix_urls(html, base_link):
     return unicode(bsoup)
 
 def get_soup(html):
-        """ Returns the BeautifulSoup object from the html """
-        bsoup = None
-        try:
-            bsoup = BeautifulSoup(html)
-        except Exception, e:
-            #Find a solution for this
-            print('Error while parsing html: %s' % e)
+    """ Returns the BeautifulSoup object from the html """
+    bsoup = None
+    try:
+        bsoup = BeautifulSoup(html)
+    except Exception, e:
+        #Find a solution for this
+        print('Error while parsing html: %s' % e)
 
-        return bsoup
+    return bsoup
+
+def parse_rss(html):
+    """
+    Returns a list of entries for the given RSS in HTML format
+    """
+
+    rss = feedparser.parse(html)
+    # Datetime format
+    # dt_format = '%a, %d %b %Y %H:%M:%S %z'
+    entries = [{
+                'title': entry.title,
+                'html': entry.description,
+                'plaintext': get_soup(entry.description).text,
+                'link': entry.link,
+                'date': datetime.fromtimestamp(mktime(entry.published_parsed)),
+                'has_time': True
+                }
+                for entry in rss.entries ]
+
+    return entries
 
 def date_to_datetime(date):
     """

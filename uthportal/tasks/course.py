@@ -1,4 +1,3 @@
-from time import mktime
 from datetime import datetime
 from abc import ABCMeta, abstractmethod
 
@@ -6,7 +5,7 @@ import feedparser
 from bs4 import BeautifulSoup
 
 from uthportal.tasks.base import BaseTask
-from uthportal.util import fix_urls, get_soup
+from uthportal.util import fix_urls, get_soup, parse_rss
 
 class CourseTask(BaseTask):
     task_type = 'CourseTask'
@@ -84,43 +83,21 @@ class CourseTask(BaseTask):
             self.logger.warning('Fetch "%s" returned nothing' % link)
             return None
 
-        return self.parse_eclass(html)
+        self.logger.debug('Parsing eclass ...')
+        try:
+            entries = parse_rss(html)
+        except Exception, e:
+            self.logger.error('parse_rss: %s' % unicode(e))
+            return None
 
-#This is commented out only for testing and shouldn't.
-#    @abstractmethod
+        return entries
+
+
+    # This is commented out only for testing and shouldn't.
+    #@abstractmethod
     def parse_site(self, bsoup):
         """Parse the fetced document"""
         return None
-
-    def parse_eclass(self, html):
-        """Parse the fetced document"""
-
-        self.logger.debug('Parsing eclass ...')
-        try:
-            rss = feedparser.parse(html)
-        except Exception, e:
-            self.logger.error(e)
-            return None
-
-        # Datetime format
-        # dt_format = '%a, %d %b %Y %H:%M:%S %z'
-        entries = None
-        try:
-            entries = [{
-                        'title': entry.title,
-                        'html': entry.description,
-                        'plaintext': get_soup(entry.description).text,
-                        'link': entry.link,
-                        'date': datetime.fromtimestamp(mktime(entry.published_parsed)),
-                        'has_time': True
-                        }
-                        for entry in rss.entries ]
-        except Exception, e:
-            self.logger.error(e)
-            return None
-
-        self.logger.debug('Parsed eclass successfully!')
-        return entries
 
     def postprocess_site(self, entries, base_link):
         """ Process the document before saving
