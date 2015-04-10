@@ -203,8 +203,3 @@ class BaseTask(object):
         else:
             return None
 
-"""
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    a = CourseTask('inf.courses.ce120', 5, MongoDatabaseManager())
-"""
