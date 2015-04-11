@@ -13,6 +13,8 @@ class AnnouncementTask(BaseTask):
         super(AnnouncementTask, self).__init__(path, file_path, settings, database_manager)
 
         self.update_fields = ['entries']
+        self.db_query = { 'type': self.id }
+
         self.logger.debug('Loading document from database...')
 
         self.document = self.load()
@@ -28,7 +30,6 @@ class AnnouncementTask(BaseTask):
         self.logger.debug('id = {:<10} | collection = {:<35}'.format(self.id, self.db_collection))
 
 
-    @abstractmethod
     def parse(self, document):
         """Parse the fetced document"""
         return None

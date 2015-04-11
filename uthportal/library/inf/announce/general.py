@@ -8,11 +8,6 @@ class general(AnnouncementTask):
         'link': 'http://www.inf.uth.gr/cced/?cat=24',
     }
 
-    def __init__(self, path, file_path, timeout, database_manager, **kwargs):
-        self.db_query = {'type':'general'}
-
-        super(general, self).__init__(path, file_path, timeout, database_manager)
-
     def parse(self, bsoup):
         announcements = []
 
