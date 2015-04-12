@@ -12,7 +12,6 @@ from logger import get_logger
 HTTPCODE_NOT_FOUND = 404
 HTTPCODE_NOT_IMPLEMENTED = 501
 
-
 # Overide class for JSONEncoder
 class BSONEncoderEx(JSONEncoder):
     def default(self, obj, **kwargs):
@@ -26,14 +25,38 @@ class BSONEncoderEx(JSONEncoder):
         else:
             return JSONEncoder.default(self, obj, **kwargs)
 
-
 app =  flask.Flask(__name__)
+app.config['DEBUG'] = True
 app.config['JSON_AS_ASCII'] = False
 app.config['JSON_SORT_KEYS'] = True
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 app.json_encoder = BSONEncoderEx
 
+query_type = {
+        'courses': 'code',
+        'announce': 'type'
+}
 
+@app.route('/api/v1/info/<path:url>')
+def get_info(url):
+    collection_parts = url.split('/')[:-1]
+    collection = 'server.' + '.'.join( collection_parts )
+    id = url.split('/')[-1]
+
+    query = { }
+    if len(collection_parts) > 1:
+        key = query_type[collection_parts[1]]
+        query = { key : id }
+
+    db_manager = app.config['db_manager']
+    document = db_manager.find_document(collection, query)
+
+    if isinstance(document, dict):
+        return flask.jsonify( document )
+    else:
+        flask.abort(HTTPCODE_NOT_FOUND)
+
+"""
 @app.route('/inf/courses/all')
 @app.route('/inf/courses')
 def show_courses():
@@ -109,7 +132,7 @@ def show_food_menu():
         return flask.jsonify(db_doc)
     else:
         flask.abort(HTTPCODE_NOT_IMPLEMENTED)
-
+"""
 
 def make_prod(doc):
     """
