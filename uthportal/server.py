@@ -37,6 +37,7 @@ query_type = {
         'announce': 'type'
 }
 
+
 @app.route('/api/v1/info/<path:url>')
 def get_info(url):
     collection_parts = url.split('/')[:-1]
@@ -52,6 +53,7 @@ def get_info(url):
     document = db_manager.find_document(collection, query)
 
     if isinstance(document, dict):
+        del document['_id']
         return flask.jsonify( document )
     else:
         flask.abort(HTTPCODE_NOT_FOUND)
@@ -132,13 +134,12 @@ def show_food_menu():
         return flask.jsonify(db_doc)
     else:
         flask.abort(HTTPCODE_NOT_IMPLEMENTED)
-"""
 
 def make_prod(doc):
-    """
+    """"""
     Removed the unesseccery fields for production out.
     NOTE: Also removes 'last_updated' field in order for the client notifications to work
-    """
+    """"""
     remove_fields = [ 'last_updated', '_id', 'announcements.last_updated' ]
 
     for field in remove_fields:
@@ -159,6 +160,7 @@ def make_prod(doc):
             del tmp_doc[path_to_field[path_size-1]]
 
     return doc
+"""
 
 def json_error(code, message):
     return flask.jsonify( {'error': {'code': code, 'message': message} } ), code

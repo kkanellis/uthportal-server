@@ -51,7 +51,7 @@ def parse_rss(html):
                 }
                 for entry in rss.entries ]
 
-    return entries
+    return sorted(entries, key=lambda entry: entry['date'].isoformat())[::-1]
 
 def date_to_datetime(date):
     """
