@@ -1,4 +1,5 @@
 
+import pkgutil
 from abc import ABCMeta, abstractmethod
 
 import requests
@@ -30,7 +31,7 @@ class AnnouncementTask(BaseTask):
         self.logger.debug('id = {:<10} | collection = {:<35}'.format(self.id, self.db_collection))
 
 
-    def parse(self, document):
+    def parse(self, bsoup):
         """Parse the fetced document"""
         return None
 
@@ -47,8 +48,13 @@ class AnnouncementTask(BaseTask):
 
     def _check_source(self):
         link = self.document['link']
+        (session, auth_success) = self._check_auth()
 
-        html = self.fetch(link)
+        if not auth_success:
+            self.logger.error('Authentication failed..')
+            return None
+
+        html = self.fetch(link, session=session)
         if not html:
             self.logger.warning('Fetch "%s" returned nothing' % link)
             return None
@@ -66,31 +72,47 @@ class AnnouncementTask(BaseTask):
 
         return entries
 
-    # NOTE: Ignore atm
-    def _make_auth(self, link, payload, session):
-        """ Makes an http POST request in order to login where needed """
-        try:
-            auth_response = session.post(link, verify=False, data=payload)
-        except ConnectionError:
-            self.logger.warning('%s: Connection error' % link)
-            return None
-        except Timeout:
-            self.logger.warning('%s: Timeout [%d]' % (link, self.timeout))
-            return None
+    def _check_auth(self):
+        session = None
+        auth_id = self._get_document_field(self.document, 'auth_type')
 
-        if page.status_code is not (200 or 301):
-            self.logger.warning('%s: Returned [%d]' % (link, page.code))
-            return None
+        if auth_id:
+            self.logger.debug('Authentication is needed. Initiating proccess...')
 
-        return auth_response
+            # Retrieve document which contains info on how to auth
+            auth_info = self._get_auth_info(auth_id)
+            if (not auth_info or
+                not set(['link', 'payload', 'method']) <= set(auth_info)):
+                    self.logger.error('Not a valid auth_info dict for "%s"' % unicode(auth_id))
+                    return None
+
+            (link, payload, method_str) = (auth_info['link'], auth_info['payload'], auth_info['method'])
+
+            # Load & execute module
+            module = pkgutil.find_loader('uthportal.tasks.auth_methods').load_module('')
+            auth_method = getattr(module, method_str)
+
+            session = requests.Session()
+            response = auth_method(session, link, payload)
+
+            if not response:
+                self.logger.error('Could not be auth @ "%s"' % link)
+                return None
+
+            self.logger.debug('Auth: success')
+            return (session, response)
+        else:
+            return (session, True)
+
 
     # NOTE: Ignore atm
     def _get_auth_info(self, type):
         query = { 'type' : type }
-        document = self.database_manager.find_document('auth', query)
+        document = self.database_manager.find_document('auth_info', query)
 
         if document and '_id' in document:
             del document['_id']
+            return document
         else:
             self.logger.error('No auth info found for type "%s"' % type)
 
