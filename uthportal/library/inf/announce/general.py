@@ -8,7 +8,8 @@ class general(AnnouncementTask):
         'link': 'http://www.inf.uth.gr/cced/?cat=24',
     }
 
-    def parse(self, bsoup):
+    @staticmethod
+    def parse(bsoup):
         announcements = []
 
         # get post containining announcements
