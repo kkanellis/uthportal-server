@@ -5,7 +5,7 @@ class general(AnnouncementTask):
 
     document_prototype = {
         'type': 'general',
-        'link': 'http://www.inf.uth.gr/cced/?cat=24',
+        'link': 'http://www.inf.uth.gr/cced/?cat=24'
     }
 
     @staticmethod

@@ -84,7 +84,7 @@ class AnnouncementTask(BaseTask):
             if (not auth_info or
                 not set(['link', 'payload', 'method']) <= set(auth_info)):
                     self.logger.error('Not a valid auth_info dict for "%s"' % unicode(auth_id))
-                    return None
+                    return (None, False)
 
             (link, payload, method_str) = (auth_info['link'], auth_info['payload'], auth_info['method'])
 
@@ -97,7 +97,7 @@ class AnnouncementTask(BaseTask):
 
             if not response:
                 self.logger.error('Could not be auth @ "%s"' % link)
-                return None
+                return (None, False)
 
             self.logger.debug('Auth: success')
             return (session, response)

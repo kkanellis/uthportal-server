@@ -26,7 +26,7 @@ class BSONEncoderEx(JSONEncoder):
             return JSONEncoder.default(self, obj, **kwargs)
 
 app =  flask.Flask(__name__)
-app.config['DEBUG'] = True
+
 app.config['JSON_AS_ASCII'] = False
 app.config['JSON_SORT_KEYS'] = True
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
