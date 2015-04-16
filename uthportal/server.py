@@ -12,6 +12,29 @@ from logger import get_logger
 HTTPCODE_NOT_FOUND = 404
 HTTPCODE_NOT_IMPLEMENTED = 501
 
+DEFAULT_HIDDEN_FIELDS = [ '_id', 'auth_type' ]
+query_type = {
+        'courses': 'code',
+        'announce': 'type'
+}
+
+app =  flask.Flask(__name__)
+
+app.config['JSON_AS_ASCII'] = False
+app.config['JSON_SORT_KEYS'] = True
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
+
+@app.errorhandler(HTTPCODE_NOT_FOUND)
+def page_not_found(error):
+    return json_error(HTTPCODE_NOT_FOUND,'Page not Found')
+
+@app.errorhandler(HTTPCODE_NOT_IMPLEMENTED)
+def not_implemented(error):
+    return json_error(HTTPCODE_NOT_IMPLEMENTED,'Not implemented')
+
+def json_error(code, message):
+    return flask.jsonify( {'error': {'code': code, 'message': message} } ), code
+
 # Overide class for JSONEncoder
 class BSONEncoderEx(JSONEncoder):
     def default(self, obj, **kwargs):
@@ -25,155 +48,76 @@ class BSONEncoderEx(JSONEncoder):
         else:
             return JSONEncoder.default(self, obj, **kwargs)
 
-app =  flask.Flask(__name__)
-
-app.config['JSON_AS_ASCII'] = False
-app.config['JSON_SORT_KEYS'] = True
-app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 app.json_encoder = BSONEncoderEx
-
-query_type = {
-        'courses': 'code',
-        'announce': 'type'
-}
-
 
 @app.route('/api/v1/info/<path:url>')
 def get_info(url):
-    collection_parts = url.split('/')[:-1]
-    collection = 'server.' + '.'.join( collection_parts )
-    id = url.split('/')[-1]
+    url_parts = url.split('/')
 
-    query = { }
-    if len(collection_parts) > 1:
-        key = query_type[collection_parts[1]]
-        query = { key : id }
+    if len(url_parts) <= 1: # Non-valid request
+        flask.abort(HTTPCODE_NOT_FOUND)
 
-    db_manager = app.config['db_manager']
-    document = db_manager.find_document(collection, query)
+    if url[-1] == '/': # List all children
+        url_parts = url_parts[:-1] # Remove last empty entry
+        collection = '.'.join(url_parts)
+
+        children = get_children(collection)
+
+        document = None
+        if children:
+            document = {
+                'children' : children,
+                'collection': collection
+            }
+
+    else:
+        collection = '.'.join(url_parts[:-1])
+
+        # Prepare the query
+        (key, id) = (url_parts[-2], url_parts[-1])
+        query = { query_type[key] : id }
+
+        document = get_document(collection, query)
 
     if isinstance(document, dict):
-        del document['_id']
         return flask.jsonify( document )
     else:
         flask.abort(HTTPCODE_NOT_FOUND)
 
-"""
-@app.route('/inf/courses/all')
-@app.route('/inf/courses')
-def show_courses():
-    db_manager = app.config['db_manager']
-    db_courses = db_manager.find_documents('inf.courses')
 
-    # Remove not needed keys #
-    courses = [ ]
-    for doc in sorted(db_courses,key=itemgetter('code')):
-        del doc['announcements']
-        del doc['_id']
-        courses.append(doc)
+def get_document(collection, query, **kwargs):
+    """
+    Return the first document that matches the query from the given collection
+    """
 
-    json = { 'children' : courses }
-    return flask.jsonify(json)
+    document = app.config['db_manager'].find_document('server.' + collection, query=query)
+    return remove_keys(document, **kwargs)
 
+def get_children(collection, **kwargs):
+    """
+    Returns all the children that a collection contains
+    """
+    documents = app.config['db_manager'].find_documents('server.' + collection)
 
-@app.route('/inf/courses/<course_name>')
-def show_course(course_name):
-    db_manager = app.config['db_manager']
-    db_doc = db_manager.find_document('inf.courses', {'code':course_name })
+    children = [ ]
+    for document in documents:
+        children.append( remove_keys(document, **kwargs) )
 
-    if isinstance(db_doc, dict):
-        db_doc = make_prod(db_doc)
-        return flask.jsonify(db_doc)
-    else:
-        flask.abort(HTTPCODE_NOT_FOUND)
+    return children
 
-@app.route('/inf/announce/<type>')
-def show_inf_announcements(type):
-    db_manager = app.config['db_manager']
-    db_doc = db_manager.find_document('inf.announce', {'type': type})
+def remove_keys(document, keys=None):
+    """
+    Remove keys from dictionary
+    """
 
-    if isinstance(db_doc, dict):
-        db_doc = make_prod(db_doc)
-        return flask.jsonify(db_doc)
-    else:
-        flask.abort(HTTPCODE_NOT_IMPLEMENTED)
+    if keys is None:
+        keys = DEFAULT_HIDDEN_FIELDS
 
-@app.route('/inf/schedule')
-def show_inf_schedule():
-    db_manager = app.config['db_manager']
-    db_doc = db_manager.find_document('inf.schedule')
+    for key in keys:
+        if key in document:
+            del document[key]
 
-    if isinstance(db_doc, dict):
-        db_doc = make_prod(db_doc)
-        return flask.jsonify(db_doc)
-    else:
-        flask.abort(HTTPCODE_NOT_IMPLEMENTED)
-
-@app.route('/uth/rss/<type>')
-def show_uth_announcements(type):
-    db_manager = app.config['db_manager']
-    db_doc = db_manager.find_document('uth.rss', {'type': type})
-
-    if isinstance(db_doc, dict):
-        db_doc = make_prod(db_doc)
-        return flask.jsonify(db_doc)
-    else:
-        flask.abort(HTTPCODE_NOT_IMPLEMENTED)
-
-@app.route('/uth/foodmenu')
-def show_food_menu():
-    db_manager = app.config['db_manager']
-
-    _monday = (datetime.now() - timedelta(datetime.now().weekday())).date()
-    last_monday = datetime.combine(_monday, datetime.min.time() )
-
-    db_doc = db_manager.find_document('uth.food_menu', {'date':last_monday })
-
-    if isinstance(db_doc, dict):
-        db_doc = make_prod(db_doc)
-        return flask.jsonify(db_doc)
-    else:
-        flask.abort(HTTPCODE_NOT_IMPLEMENTED)
-
-def make_prod(doc):
-    """"""
-    Removed the unesseccery fields for production out.
-    NOTE: Also removes 'last_updated' field in order for the client notifications to work
-    """"""
-    remove_fields = [ 'last_updated', '_id', 'announcements.last_updated' ]
-
-    for field in remove_fields:
-        path_to_field = field.split('.')
-
-        tmp_doc = doc
-        path_size = len(path_to_field)
-
-        path_exists = True
-        for node in path_to_field[:path_size-1]:
-            if node in tmp_doc:
-                tmp_doc = tmp_doc[node]
-            else:
-                path_exists = False
-                break
-
-        if path_exists and path_to_field[path_size-1] in tmp_doc:
-            del tmp_doc[path_to_field[path_size-1]]
-
-    return doc
-"""
-
-def json_error(code, message):
-    return flask.jsonify( {'error': {'code': code, 'message': message} } ), code
-
-@app.errorhandler(HTTPCODE_NOT_FOUND)
-def page_not_found(error):
-    return json_error(HTTPCODE_NOT_FOUND,'Page not Found')
-
-@app.errorhandler(HTTPCODE_NOT_IMPLEMENTED)
-def not_implemented(error):
-    return json_error(HTTPCODE_NOT_IMPLEMENTED,'Not implemented')
-
-
+    return document
 
 class Server(object):
     """
