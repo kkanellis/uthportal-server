@@ -94,8 +94,10 @@ class MongoDatabaseManager(IDatabaseManager):
         return True
 
     @_requires_client
-    def find_document(self, collection, query = {}, **kwargs):
+    def find_document(self, collection, query=None, **kwargs):
         # Since we are interested in one document, find_one is used.
+        if query is None:
+            query = { }
 
         document = None
         try:
@@ -108,7 +110,10 @@ class MongoDatabaseManager(IDatabaseManager):
 
 
     @_requires_client
-    def find_documents(self, collection, query = {}, **kwargs):
+    def find_documents(self, collection, query=None, **kwargs):
+        if query is None:
+            query = { }
+
         documents = None
         try:
             documents = self.db[collection].find(query, **kwargs)
