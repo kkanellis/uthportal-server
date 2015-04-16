@@ -57,6 +57,7 @@ def get_info(url):
     if len(url_parts) <= 1: # Non-valid request
         flask.abort(HTTPCODE_NOT_FOUND)
 
+    document = None
     if url[-1] == '/': # List all children
         url_parts = url_parts[:-1] # Remove last empty entry
         collection = '.'.join(url_parts)
@@ -75,9 +76,10 @@ def get_info(url):
 
         # Prepare the query
         (key, id) = (url_parts[-2], url_parts[-1])
-        query = { query_type[key] : id }
 
-        document = get_document(collection, query)
+        if key in query_type:
+            query = { query_type[key] : id }
+            document = get_document(collection, query)
 
     if isinstance(document, dict):
         return flask.jsonify( document )
