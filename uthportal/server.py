@@ -93,7 +93,7 @@ def get_document(collection, query, **kwargs):
     """
 
     document = app.config['db_manager'].find_document('server.' + collection, query=query)
-    return remove_keys(document, **kwargs)
+    return remove_keys(document, **kwargs) if document else None
 
 def get_children(collection, **kwargs):
     """
@@ -103,7 +103,8 @@ def get_children(collection, **kwargs):
 
     children = [ ]
     for document in documents:
-        children.append( remove_keys(document, **kwargs) )
+        if document:
+            children.append( remove_keys(document, **kwargs) )
 
     return children
 
