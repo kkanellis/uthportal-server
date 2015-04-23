@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import os
 from time import mktime
 from datetime import datetime
 from urlparse import urljoin, urlparse
@@ -27,6 +27,11 @@ def download_file(link, filename, timeout=5.0):
     """
     Download a file and save it to disk
     """
+    #check if directory exists and create if needed
+    directory = os.path.dirname(filename)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     with open(filename, 'wb') as f:
         try:
             # streaming the file to its location
