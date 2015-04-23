@@ -15,7 +15,8 @@ HTTPCODE_NOT_IMPLEMENTED = 501
 DEFAULT_HIDDEN_FIELDS = [ '_id', 'auth_type' ]
 query_type = {
         'courses': 'code',
-        'announce': 'type'
+        'announce': 'type',
+        'food': 'city'
 }
 
 app =  flask.Flask(__name__)
