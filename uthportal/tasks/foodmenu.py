@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from os import path
+from os import path, errno
 from subprocess import call
 from datetime import datetime, timedelta
 
@@ -89,7 +89,14 @@ class FoodmenuTask(BaseTask):
         # Write the .doc menu to a file
         # set the arguments and make the call
         soffice_args = ['soffice', '--headless', '--convert-to', 'html:HTML', '--outdir', self.settings['tmp_path'], path_doc ]
-        ret_code = call(soffice_args)
+        try:
+            ret_code = call(soffice_args)
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                elf.logger.error("soffice not found!")
+                return None
+            else:
+                raise
 
         if ret_code != 0 or (not path.exists(path_html)):
             self.logger.error('Could not convert .doc to .html')
