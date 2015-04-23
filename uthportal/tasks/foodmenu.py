@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 
 from os import path
+from subprocess import call
 from datetime import datetime, timedelta
 
 from uthportal.tasks.base import BaseTask
+from uthportal.util import download_file
 
 class FoodmenuTask(BaseTask):
     task_type = 'FoodmenuTask'
+    weekdays = [ 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή' ]
 
     def __init__(self, path, file_path, settings, database_manager):
         super(FoodmenuTask, self).__init__(path, file_path, settings, database_manager)
@@ -51,12 +54,17 @@ class FoodmenuTask(BaseTask):
         else:
             link = link % (self.latest_monday.year, self.latest_monday.month, self.latest_monday.day)
 
-        menu_doc = self.fetch(link)
-        if not menu_doc:
-            self.logger.warning('Fetch "%s" returned nothing' % link)
+        path_prototype = path.join(self.settings['tmp_path'], unicode(self.latest_monday))
+        path_doc = path_prototype + '.doc'
+        path_html = path_prototype + '.html'
+
+
+        success = download_file(link, path_doc)
+        if not path.exists(path_doc):
+            self.logger.error('Could not write menu_doc to file "%s"' % path_doc)
             return None
 
-        html = self.convert_to_html(menu_doc)
+        html = self.get_html(path_doc, path_html)
         if not html:
             self.logger.warning('Converted HTML is empty')
             return None
@@ -69,7 +77,7 @@ class FoodmenuTask(BaseTask):
 
         return foodmenu
 
-    def convert_to_html(self, menu_doc):
+    def get_html(self, path_doc, path_html):
         """
         Uses soffice library ( used by LibreOffice & OpenOffice ) to convert
         the .doc file to the according .html one.
@@ -77,20 +85,10 @@ class FoodmenuTask(BaseTask):
         Reference:
         https://help.libreoffice.org/Common/Starting_the_Software_With_Parameters
         """
+
         # Write the .doc menu to a file
-        path_prototype = path.join(self.settings['tmp_path'], unicode(self.latest_monday))
-        path_doc = path_prototype + '.doc'
-        path_html = path_prototype + '.html'
-
-        with open(path_doc, 'w') as f:
-            f.write(menu_doc)
-
-        if not path.exists(path_doc):
-            self.logger.error('Could not write menu_doc to file "%s"' % path_doc)
-            return None
-
         # set the arguments and make the call
-        soffice_args = ['soffice', '--headless', '--convert-to', 'html:HTML', '--outdir', dir_name, doc_path ]
+        soffice_args = ['soffice', '--headless', '--convert-to', 'html:HTML', '--outdir', self.settings['tmp_path'], path_doc ]
         ret_code = call(soffice_args)
 
         if ret_code != 0 or (not path.exists(path_html)):
@@ -98,7 +96,7 @@ class FoodmenuTask(BaseTask):
             return None
 
         # Read the html produced
-        with open(path_html, 'r') as f:
+        with open(path_html, 'rb') as f:
             html = f.read()
 
         if not html:

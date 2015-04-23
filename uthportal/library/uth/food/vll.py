@@ -39,7 +39,7 @@ class vll(FoodmenuTask):
         menu = list()
         for i in xrange(7):
             day_menu = {
-                    'name': weekdays[i],
+                    'name': self.weekdays[i],
                     'date': date_to_datetime(self.latest_monday + timedelta(days=i)),
                     'lunch': {
                         'main': lunch[0][i],
