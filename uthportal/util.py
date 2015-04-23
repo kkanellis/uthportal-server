@@ -5,6 +5,7 @@ from time import mktime
 from datetime import datetime
 from urlparse import urljoin, urlparse
 
+import requests
 import feedparser
 from bs4 import BeautifulSoup
 
@@ -21,6 +22,23 @@ def fix_urls(html, base_link):
             a_tag['href'] = urljoin(base_link, a_tag['href'])
 
     return unicode(bsoup)
+
+def download_file(link, filename, timeout=5.0):
+    """
+    Download a file and save it to disk
+    """
+    with open(filename, 'wb') as f:
+        try:
+            # streaming the file to its location
+            page = requests.get(link, timeout=timeout, stream=True)
+            for block in page.iter_content():
+                f.write(block)
+
+        except requests.exceptions.Timeout:
+            logger.warning("download_file: timeout while fetching" + '\n\t' + link)
+            return False
+
+    return True
 
 def get_soup(html):
     """ Returns the BeautifulSoup object from the html """
