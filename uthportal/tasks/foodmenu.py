@@ -93,7 +93,7 @@ class FoodmenuTask(BaseTask):
             ret_code = call(soffice_args)
         except OSError as e:
             if e.errno == errno.ENOENT:
-                elf.logger.error("soffice not found!")
+                self.logger.error("soffice not found!")
                 return None
             else:
                 raise
