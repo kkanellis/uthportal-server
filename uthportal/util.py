@@ -36,6 +36,9 @@ def download_file(link, filename, timeout=5.0):
         try:
             # streaming the file to its location
             page = requests.get(link, timeout=timeout, stream=True)
+            if page.status_code is not (200 or 301):
+                return False
+
             for block in page.iter_content():
                 f.write(block)
 
