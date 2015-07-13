@@ -72,7 +72,7 @@ class Configuration(object):
         except IOError as e:
             self.logger.warn(
                     "Config file not found! (I/O error({0}): {1}). \
-                            Using defualt settings".format(e.errno, e.strerror))
+                    Using default settings".format(e.errno, e.strerror))
             self.save_settings()
 
         except:

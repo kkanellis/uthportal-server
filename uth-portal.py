@@ -81,7 +81,7 @@ class UthPortal(object):
         self.logger.error(traceback)
 
     def start(self):
-        self._start_schedulerr()
+        self._start_scheduler()
         self._start_server()
 
     def stop(self):
@@ -100,7 +100,7 @@ class UthPortal(object):
         if self.server.is_running :
             self.server.stop()
 
-    def _start_schedulerr(self):
+    def _start_scheduler(self):
         self.logger.debug('Starting the scheduler')
 
         self.scheduler.init(**self.settings['scheduler']['apscheduler'])
