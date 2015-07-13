@@ -59,6 +59,30 @@ def get_soup(html):
 
     return bsoup
 
+def get_food_links(html):
+    food_links = {
+            'vll' : [],
+            'tk' : []
+    }
+
+    soup = get_soup(html)
+
+    all_p = soup.find_all('p')
+    for par in all_p:
+        if par is not None:
+            if VLL_TEXT in str(par):
+                for child in par.findChildren('a', href=True):
+                    if 'href' in child:
+                        food_links['vll'].append(child['href'])
+
+            if TK_TEXT in str(par):
+                for child in par.findChildren('a', href=True):
+                    if 'href' in child:
+                        food_links['tk'].append(child['href'])
+
+    return food_links
+
+
 def parse_rss(html):
     """
     Returns a list of entries for the given RSS in HTML format
