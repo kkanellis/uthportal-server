@@ -9,6 +9,9 @@ import requests
 import feedparser
 from bs4 import BeautifulSoup
 
+VLL_TEXT = 'ΒΟΛΟΣ, ΛΑΡΙΣΑ, ΛΑΜΙΑ'
+TK_TEXT = 'ΤΡΙΚΑΛΑ, ΚΑΡΔΙΤΣΑ'
+
 def truncate_str(data, length):
     length -= 2
     return (data[:length] + '...') if len(data) > length else data
