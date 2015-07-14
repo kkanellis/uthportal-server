@@ -9,6 +9,8 @@ import requests
 import feedparser
 from bs4 import BeautifulSoup
 
+FOOD_MENU_PAGE = 'http://www.uth.gr/students/student-welfare/programma-sitisis'
+
 VLL_TEXT = 'ΒΟΛΟΣ, ΛΑΡΙΣΑ, ΛΑΜΙΑ'
 TK_TEXT = 'ΤΡΙΚΑΛΑ, ΚΑΡΔΙΤΣΑ'
 
@@ -56,18 +58,31 @@ def get_soup(html):
     bsoup = None
     try:
         bsoup = BeautifulSoup(html)
-    except Exception, e:
+    except Exception as e:
         #Find a solution for this
         print('Error while parsing html: %s' % e)
 
     return bsoup
 
-def get_food_links(html):
+
+def get_raw_webpage(url):
+    """
+    Download a web url as raw bytes
+    """
+    page = requests.get(url)
+    if page.status_code is not (200 or 301):
+        return False
+
+    return page.text
+
+
+def get_food_links():
     food_links = {
             'vll' : [],
             'tk' : []
     }
 
+    html = get_raw_webpage(FOOD_MENU_PAGE)
     soup = get_soup(html)
 
     all_p = soup.find_all('p')
@@ -75,13 +90,11 @@ def get_food_links(html):
         if par is not None:
             if VLL_TEXT in str(par):
                 for child in par.findChildren('a', href=True):
-                    if 'href' in child:
-                        food_links['vll'].append(child['href'])
+                    food_links['vll'].append(child['href'])
 
             if TK_TEXT in str(par):
                 for child in par.findChildren('a', href=True):
-                    if 'href' in child:
-                        food_links['tk'].append(child['href'])
+                    food_links['tk'].append(child['href'])
 
     return food_links
 
