@@ -1,6 +1,7 @@
 
 import json
 import os
+import stat
 import sys
 
 from uthportal.logger import get_logger
@@ -46,6 +47,10 @@ class Configuration(object):
             'library_path': 'uthportal/library',
             'tmp_path': 'uthportal/tmp'
     }
+    def _fix_permissions(self):
+        st = os.stat(CONFIG_FILE)
+        if st.st_mode != 0600 :
+                os.chmod(CONFIG_FILE, 0600)
 
     def __init__(self):
         self.settings = self.default_settings
@@ -68,6 +73,7 @@ class Configuration(object):
         try:
             with open(CONFIG_FILE, 'r') as json_file:
                 self.settings = json.load(json_file, encoding = 'utf-8')
+            self._fix_permissions()
 
         except IOError as e:
             self.logger.warn(
@@ -79,11 +85,11 @@ class Configuration(object):
             self.logger.error("Unexpected error:", sys.exc_info()[0])
 
 
-        if 'logd_dir' in self.settings:
+        if 'log_dir' in self.settings:
             log_dir = self.settings['log_dir']
             log_dir = os.path.abspath(log_dir) #convert to absolute path
             if os.path.isdir(log_dir):
-                self.setting['log_dir'] = log_dir
+                self.settings['log_dir'] = log_dir
                 return
 
         self.settings['log_dir'] = '{0}/logs'.format(os.getcwd())
@@ -95,6 +101,7 @@ class Configuration(object):
             with open(CONFIG_FILE, 'w') as json_file:
                 json.dump(self.settings, json_file, sort_keys = True,
                             indent = 4, separators=(',', ': '))
+                self._fix_permissions()
 
         except IOError as e:
             self.logger.error("I/O error({0}): {1}".format(e.errno, e.strerror))
