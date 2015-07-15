@@ -49,8 +49,9 @@ class Configuration(object):
     }
     def _fix_permissions(self):
         st = os.stat(CONFIG_FILE)
-        if st.st_mode != 0600 :
-                os.chmod(CONFIG_FILE, 0600)
+        if st.st_mode & 0xFFF != 0600 :
+            self.logger.warn("Fixing permissions...")
+            os.chmod(CONFIG_FILE, 0600)
 
     def __init__(self):
         self.settings = self.default_settings
