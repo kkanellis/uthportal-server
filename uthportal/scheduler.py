@@ -37,9 +37,8 @@ class Scheduler(object):
         self.logger.debug('Tasks found:')
         self.logger.debug(LINE_SPLITTER)
         for key in self.tasks:
-            self.logger.debug('%s\t|\t%s' % (key, self.tasks[key].task_type))
+            self.logger.debug('%45s %30s' % (key, self.tasks[key].task_type))
         self.logger.debug(LINE_SPLITTER)
-
 
         #self.logger.debug('Checking tasks paths!')
         # TODO: Check if paths are valid
@@ -58,7 +57,7 @@ class Scheduler(object):
             self.logger.debug('Adding task "%s" [%s]' % (id, task_type))
 
             if not task_type in self.intervals:
-                self.logger.warning('Interval not defined for "%s" class' % task_type)
+                self.logger.warning('Interval not defined for "%s" class. Skipping task ...' % task_type)
                 continue
 
             self.add_task(id, task, self.intervals[task_type])
@@ -169,3 +168,4 @@ class Scheduler(object):
                 new_dict[new_key] = d[key]
 
         return new_dict
+

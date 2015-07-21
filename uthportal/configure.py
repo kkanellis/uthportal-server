@@ -47,11 +47,6 @@ class Configuration(object):
             'library_path': 'uthportal/library',
             'tmp_path': 'uthportal/tmp'
     }
-    def _fix_permissions(self):
-        st = os.stat(CONFIG_FILE)
-        if st.st_mode & 0xFFF != 0600 :
-            self.logger.warn("Fixing permissions...")
-            os.chmod(CONFIG_FILE, 0600)
 
     def __init__(self):
         self.settings = self.default_settings
@@ -108,4 +103,10 @@ class Configuration(object):
             self.logger.error("I/O error({0}): {1}".format(e.errno, e.strerror))
         except:
             self.logger.error("Unexpected error:", sys.exc_info()[0])
+
+    def _fix_permissions(self):
+        st = os.stat(CONFIG_FILE)
+        if st.st_mode & 0xFFF != 0600 :
+            self.logger.warn("Fixing permissions...")
+            os.chmod(CONFIG_FILE, 0600)
 
