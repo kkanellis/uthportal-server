@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import os
 from time import mktime
 from datetime import datetime
 from urlparse import urljoin, urlparse
+from json import JSONEncoder
 
 import requests
 import feedparser
@@ -13,6 +15,24 @@ FOOD_MENU_PAGE = 'http://www.uth.gr/students/student-welfare/programma-sitisis'
 
 VLL_TEXT = 'ΒΟΛΟΣ, ΛΑΡΙΣΑ, ΛΑΜΙΑ'
 TK_TEXT = 'ΤΡΙΚΑΛΑ, ΚΑΡΔΙΤΣΑ'
+
+
+class BSONEncoderEx(JSONEncoder):
+    """
+    Extending JSONEncoder to support datetime & ObjectId (mongo-id) objects
+    when using python's json library
+    """
+    def default(self, obj, **kwargs):
+        from bson.objectid import ObjectId
+        from datetime import datetime
+
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        else:
+            return JSONEncoder.default(self, obj, **kwargs)
+
 
 def truncate_str(data, length):
     length -= 2

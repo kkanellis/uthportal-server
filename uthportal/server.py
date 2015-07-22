@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from operator import itemgetter
 
 from logger import get_logger
+from util import BSONEncoderEx
 
 HTTPCODE_NOT_FOUND = 404
 HTTPCODE_NOT_IMPLEMENTED = 501
@@ -25,6 +26,8 @@ app.config['JSON_AS_ASCII'] = False
 app.config['JSON_SORT_KEYS'] = True
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 
+app.json_encoder = BSONEncoderEx
+
 @app.errorhandler(HTTPCODE_NOT_FOUND)
 def page_not_found(error):
     return json_error(HTTPCODE_NOT_FOUND,'Page not Found')
@@ -35,21 +38,6 @@ def not_implemented(error):
 
 def json_error(code, message):
     return flask.jsonify( {'error': {'code': code, 'message': message} } ), code
-
-# Overide class for JSONEncoder
-class BSONEncoderEx(JSONEncoder):
-    def default(self, obj, **kwargs):
-        from bson.objectid import ObjectId
-        from datetime import datetime
-
-        if isinstance(obj, ObjectId):
-            return str(obj)
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        else:
-            return JSONEncoder.default(self, obj, **kwargs)
-
-app.json_encoder = BSONEncoderEx
 
 @app.route('/api/v1/info/<path:url>')
 def get_info(url):

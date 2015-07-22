@@ -1,2 +1,0 @@
-Each unit test must have a 'main' function defined which takes
-no parameter and returns True or False depending on the test results
