@@ -2,11 +2,9 @@
 # -*- coding: utf-8 -*-
 
 info = """
-Module for testing individual tasks. Very usefull when writing new tasks or fixing the existing ones
-
-Usage: checktask.py path_to_task output_file[optional]
-e.g    checktask.py inf.announce.general data.json
-e.g2   checktask.py inf.courses.ceXXX
+Module for testing individual tasks.
+Very useful when writing new tasks or
+fixing the existing ones.
 """
 
 GREEN_TICK = "\033[1;32m✔\033[0m"
@@ -24,6 +22,7 @@ FIELDS_DICT = {
         }
 
 import sys
+from argparse import ArgumentParser
 from os.path import abspath, dirname
 from pkgutil import get_loader
 from inspect import isclass, getmembers
@@ -33,18 +32,9 @@ from uthportal.database.memory import MemoryDatabaseManager
 from uthportal.configure import Configuration
 from uthportal.util import BSONEncoderEx
 
-def main():
-    if len(sys.argv) != 2 and len(sys.argv) != 3:
-        print 'Invalid number of arguments [%d]' % len(sys.argv)
-        print info
-        return
 
-    if sys.argv[1] in ['help', '-h', '--help']:
-        print info
-        return
-
-    dot_path = sys.argv[1]
-    out_file = sys.argv[2] if len(sys.argv) == 3 else None
+def check_task(task_path, presult = False, outfile = None):
+    dot_path = task_path
 
     # Get setings and init db_manager
     config = Configuration()
@@ -60,7 +50,7 @@ def main():
         print 'Invalid task type, or only type given'
         print 'Your input was: [%s]' % dot_path
         print 'Valid task types are: \n\t%s' % "\n\t".join(FIELDS_DICT.keys())
-        return
+        sys.exit(1)
 
     path = settings['library_path'] + '/' + '/'.join(spath)
     classname = spath[-1]
@@ -104,18 +94,7 @@ def main():
     for field in task_instance.update_fields:
         result[field] = task_instance._get_document_field(task_instance.document, field)
 
-    print "\nDone...\nResults:"
-    print "======================================"
-    #Check if fields exist and are not empty
-    fields_to_check = FIELDS_DICT[task_type]
-    for field in fields_to_check:
-        if field in result and result[field]:
-            print "%s: [%s]" %(field, GREEN_TICK)
-        else :
-            print "%s: [%s]" %(field, RED_CROSS)
-
-
-    # Pretty print the data
+    #Prettify result data
     data = dumps(
             result,
             cls=BSONEncoderEx,
@@ -124,13 +103,41 @@ def main():
             indent=4
         )
 
-#    print data
 
-        # Write to file (if have to)
-    if out_file:
-        with open(out_file, 'w') as f:
+    if presult:
+        print "\n=============================================================="
+        print "Actual returned data:"
+        print "==============================================================\n"
+        print data
+        print "\n=============================================================="
+
+    print "\nDone...\nResults:"
+    print "======================================"
+
+    #Check if fields exist and are not empty
+    fields_to_check = FIELDS_DICT[task_type]
+    for field in fields_to_check:
+        if field in result and result[field]:
+            print "%s: [%s]" %(field, GREEN_TICK)
+        else :
+            print "%s: [%s]" %(field, RED_CROSS)
+
+    if outfile:
+        print "\nWriting data to file: [%s]..." % outfile[0]
+        with open(outfile[0], 'w') as f:
             f.write(data.encode('utf8'))
 
+def main():
 
+    parser = ArgumentParser(description = info)
+    parser.add_argument("module_name", help="The name of the module to test",
+            metavar = "module name", type = str)
+    parser.add_argument("-o","--outfile", help="Output result data in the specified file", type = str, nargs = 1)
+    parser.add_argument("-p", "--presult", help="Print the whole result", action="store_true")
+    args = parser.parse_args()
+
+    check_task(args.module_name, args.presult, args.outfile)
+
+    print "\nBye :)"
 if __name__ == '__main__':
     main()
