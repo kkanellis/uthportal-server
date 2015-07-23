@@ -9,6 +9,20 @@ e.g    checktask.py inf.announce.general data.json
 e.g2   checktask.py inf.courses.ceXXX
 """
 
+GREEN_TICK = "\033[1;32m✔\033[0m"
+RED_CROSS = "\033[1;31m✘\033[0m"
+
+
+#this dictionary provides a list of fields to check for each type of task
+#to get all types of tasks use 'tree uthportal/library -I *.pyc'
+
+FIELDS_DICT = {
+        "inf.courses" : ['announcements.eclass', 'announcements.site'],
+        "inf.announce" : ['entries'],
+        "uth.announce" : ['entries'],
+        "uth.food" : ['menu'],
+        }
+
 import sys
 from os.path import abspath, dirname
 from pkgutil import get_loader
@@ -41,6 +55,11 @@ def main():
     # Construct path & module name
     spath = dot_path.split('.')
 
+    task_type = '.'.join(spath[:-1])
+    if task_type not in FIELDS_DICT:
+        print 'Invalid task!'
+        return
+
     path = settings['library_path'] + '/' + '/'.join(spath)
     classname = spath[-1]
 
@@ -68,14 +87,30 @@ def main():
         print 'Unable to import task: ' + path
         return
 
+    print '\n\nTask type: [%s], Task name: [%s]' %( task_type, classname)
+    print 'Press Enter to continue'
+    raw_input()
+
     # Initialize & call the task
+    print '\nInitiallizing task...'
     task_instance = task_class('.'.join(spath), path, settings, db_manager)
+    print '\nRunning task...'
     task_instance.__call__()
 
     # Contruct the data dictionary
     result = { }
     for field in task_instance.update_fields:
         result[field] = task_instance._get_document_field(task_instance.document, field)
+
+    print "Done...\nResults:"
+    #Check if fields exist and are not empty
+    fields_to_check = FIELDS_DICT[task_type]
+    for field in fields_to_check:
+        if field in result and result[field]:
+            print "[%s] %s" %(field, GREEN_TICK)
+        else :
+            print "[%s] %s" %(field, RED_CROSS)
+
 
     # Pretty print the data
     data = dumps(
@@ -86,9 +121,9 @@ def main():
             indent=4
         )
 
-    print data
+#    print data
 
-    # Write to file (if have to)
+        # Write to file (if have to)
     if out_file:
         with open(out_file, 'w') as f:
             f.write(data.encode('utf8'))
