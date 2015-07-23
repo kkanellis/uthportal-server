@@ -57,7 +57,9 @@ def main():
 
     task_type = '.'.join(spath[:-1])
     if task_type not in FIELDS_DICT:
-        print 'Invalid task!'
+        print 'Invalid task type, or only type given'
+        print 'Your input was: [%s]' % dot_path
+        print 'Valid task types are: \n\t%s' % "\n\t".join(FIELDS_DICT.keys())
         return
 
     path = settings['library_path'] + '/' + '/'.join(spath)
@@ -68,14 +70,14 @@ def main():
     loader = get_loader(path)
 
     if not loader:
-        print 'Unable to find module: ' + path
+        print 'Unable to find module: ' + classname
         print 'Make sure it exists'
         return
 
     module = loader.load_module(classname)
 
     if not module:
-        print 'Unable to import module: ' + path
+        print 'Unable to import module: ' + dot_path
         return
 
     for name, object in getmembers(module):
