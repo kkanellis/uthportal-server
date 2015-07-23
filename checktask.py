@@ -102,14 +102,15 @@ def main():
     for field in task_instance.update_fields:
         result[field] = task_instance._get_document_field(task_instance.document, field)
 
-    print "Done...\nResults:"
+    print "\nDone...\nResults:"
+    print "======================================"
     #Check if fields exist and are not empty
     fields_to_check = FIELDS_DICT[task_type]
     for field in fields_to_check:
         if field in result and result[field]:
-            print "[%s] %s" %(field, GREEN_TICK)
+            print "%s: [%s]" %(field, GREEN_TICK)
         else :
-            print "[%s] %s" %(field, RED_CROSS)
+            print "%s: [%s]" %(field, RED_CROSS)
 
 
     # Pretty print the data
