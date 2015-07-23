@@ -1,12 +1,12 @@
 #!/bin/env/python
 # -*- coding: utf-8 -*-
 
-"""
+info = """
 Module for testing individual tasks. Very usefull when writing new tasks or fixing the existing ones
 
-Usage: ttask path_to_task output_file[optional]
-e.g    ttask inf.announce.general data.json
-
+Usage: checktask.py path_to_task output_file[optional]
+e.g    checktask.py inf.announce.general data.json
+e.g2   checktask.py inf.courses.ceXXX
 """
 
 import sys
@@ -22,7 +22,11 @@ from uthportal.util import BSONEncoderEx
 def main():
     if len(sys.argv) != 2 and len(sys.argv) != 3:
         print 'Invalid number of arguments [%d]' % len(sys.argv)
-        print 'Usage: ttask "path_to_task" '
+        print info
+        return
+
+    if sys.argv[1] in ['help', '-h', '--help']:
+        print info
         return
 
     dot_path = sys.argv[1]
@@ -42,7 +46,7 @@ def main():
 
     # Retrieve task class
     task_class = None
-    loader = get_loader(dot_path)
+    loader = get_loader(path)
 
     if not loader:
         print 'Unable to find module: ' + path
