@@ -42,7 +42,7 @@ def main():
 
     # Retrieve task class
     task_class = None
-    loader = get_loader(path)
+    loader = get_loader(dot_path)
 
     if not loader:
         print 'Unable to find module: ' + path
