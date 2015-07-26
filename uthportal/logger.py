@@ -10,51 +10,44 @@ level_dict = {
 
 logging.captureWarnings(True)
 
-def split_filepath(filepath):
-    filepath = os.path.abspath(filepath)
-    dirname, filename = os.path.split(filepath)
-    filename = os.path.splitext(filename)[0]
-    return dirname, filename
-
-def get_level(name, settings_level):
+def _get_level(name, settings_level):
     if name in settings_level:
         return level_dict[settings_level[name]]
     else:
         return level_dict[settings_level['default']]
 
-
-def get_logger(name, settings):
+def get_logger(name, settings, show_in_terminal = True, override_file_level = False):
     """Creates a custom logger with date and time"""
     folder = settings['log_dir']
 
-    level = get_level(name, settings['logger']['levels'])
+    level = _get_level(name, settings['logger']['levels'])
 
     if not os.path.exists(folder):
         os.makedirs(folder)
 
     logger = logging.getLogger(name)
-    logger.setLevel(level)
+    logger.setLevel(logging.DEBUG) #Set to the lowest
 
+    #File handler
     fh = logging.handlers.RotatingFileHandler(
             folder + '/' + name + '.log',
             maxBytes=settings['logger']['max_size'],
             backupCount=settings['logger']['logs_backup_count'])
-    fh.setLevel(level)
-
-    ch = logging.StreamHandler()
-    ch.setLevel(level)
-
-    console_formatter = ColoredFormatter(
-            "%(asctime)s: [%(levelname)s] [%(name)s] %(message)s",  "%Y-%m-%d %H:%M:%S")
-
+    fh.setLevel(level if override_file_level else logging.DEBUG)
     file_formatter = ColoredFormatter(
             "%(asctime)s: [%(levelname)s] %(message)s",  "%Y-%m-%d %H:%M:%S")
 
     fh.setFormatter(file_formatter)
-    ch.setFormatter(console_formatter)
-
     logger.addHandler(fh)
-    logger.addHandler(ch)
+
+    if show_in_terminal:
+        #Congole handler
+        ch = logging.StreamHandler()
+        ch.setLevel(level)
+        console_formatter = ColoredFormatter(
+                "%(asctime)s: [%(levelname)s] [%(name)s] %(message)s",  "%Y-%m-%d %H:%M:%S")
+        ch.setFormatter(console_formatter)
+        logger.addHandler(ch)
 
     return logger
 

@@ -34,12 +34,12 @@ class Configuration(object):
                 'max_size': 10000000,
                 'logs_backup_count': 3,
                 'levels': {
-                    'default': 'DEBUG',
-                    'mongo': 'DEBUG',
-                    'scheduler': 'DEBUG',
-                    'apscheduler': 'DEBUG',
-                    'uth-portal': 'DEBUG',
-                    'uthportal': 'DEBUG'
+                    'default': 'WARN',
+                    'mongo': 'WARN',
+                    'scheduler': 'WARN',
+                    'apscheduler': 'WARN',
+                    'uth-portal': 'WARN',
+                    'uthportal': 'WARN'
                 }
             },
             'network': {
@@ -50,10 +50,9 @@ class Configuration(object):
     }
 
     def __init__(self):
-        print stack()[1][3]
-        self.default_settings['log_dir'] = os.path.dirname(os.path.abspath(sys.argv[0]))
+        self.default_settings['log_dir'] = os.path.dirname(os.path.abspath(sys.argv[0])) + '/logs'
         self.settings = self.default_settings
-        self.logger = get_logger('configure', self.settings)
+        self.logger = get_logger('init', self.settings)
         self.load_settings()
 
     def get_settings(self):
@@ -76,22 +75,27 @@ class Configuration(object):
 
         except IOError as e:
             self.logger.warn(
-                    "Config file not found! (I/O error({0}): {1}). \
-                    Using default settings".format(e.errno, e.strerror))
+                    "Cannot load config file [{0}]! (Reason: {1}). \
+                    Using default settings".format(CONFIG_FILE, e.strerror))
             self.save_settings()
 
         except:
             self.logger.error("Unexpected error:", sys.exc_info()[0])
+            sys.exit(1)
 
 
         if 'log_dir' in self.settings:
             log_dir = self.settings['log_dir']
             log_dir = os.path.abspath(log_dir) #convert to absolute path
-            if os.path.isdir(log_dir):
-                self.settings['log_dir'] = log_dir
-                return
+            self.settings['log_dir'] = log_dir
+        else:
+            self.logger.warn('No log_dir specified. Using defualt')
+            self.settings['log_dir'] = self.default_settings['log_dir']
 
-        self.settings['log_dir'] = '{0}/logs'.format(os.getcwd())
+        #Update our logger based on loaded settings
+        self.logger = get_logger('configure', self.settings)
+        self.logger.info('Loaded new settings')
+
 
     def save_settings(self):
         self.logger.info('Saving configuration...')
@@ -110,5 +114,5 @@ class Configuration(object):
     def _fix_permissions(self):
         st = os.stat(CONFIG_FILE)
         if st.st_mode & 0xFFF != 0600 :
-            self.logger.warn("Fixing permissions...")
+            self.logger.info("Fixing permissions...")
             os.chmod(CONFIG_FILE, 0600)
