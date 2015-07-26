@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from uthportal.tasks.course import CourseTask
+from datetime import datetime
 
 class ce121(CourseTask):
     document_prototype = {
@@ -39,16 +40,18 @@ class ce121(CourseTask):
         """
         # Get the region of the announcements
         announce_region = bsoup.find('a', id='announce')
+        info_region = bsoup.find('a', id='info')
 
-        # Move to the ul tag
-        announce_region = announce_region.find_next_sibling()
-        announce_region = announce_region.find_next_sibling()
-
-        # Find all b inside li (dates & titles)
-        dates_titles = announce_region.select('li > b')
-
-        # Find all announcements html
-        htmls = announce_region.find_all('ul', class_='nb')
+        #get titels & htmls
+        dates_titles = []
+        htmls = []
+        for sibling in  announce_region.next_siblings:
+            if sibling.name == 'h5':
+                dates_titles.append(sibling)
+            if sibling.name == 'ul':
+                htmls.append(sibling)
+            if sibling is info_region:
+                break
 
         # Remove the ul 'outer' tag and create the plaintext entry
         plaintexts = [ ]
