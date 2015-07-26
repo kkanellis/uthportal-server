@@ -13,7 +13,7 @@ class MongoDatabaseManager(IDatabaseManager):
         TODO: Maybe use named arguments or get with default values?
         """
         self.settings = settings
-        self.logger = get_logger(__file__, self.settings)
+        self.logger = get_logger('mongo', self.settings)
 
         self.client = None
 
@@ -147,5 +147,3 @@ class MongoDatabaseManager(IDatabaseManager):
             return False
 
         return True
-
-

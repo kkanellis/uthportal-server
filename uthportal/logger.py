@@ -1,7 +1,6 @@
 import logging
 import logging.handlers
 import os
-
 level_dict = {
         'WARN': logging.WARN,
         'DEBUG': logging.DEBUG,
@@ -9,6 +8,7 @@ level_dict = {
         'INFO': logging.INFO
 }
 
+logging.captureWarnings(True)
 
 def split_filepath(filepath):
     filepath = os.path.abspath(filepath)
@@ -23,13 +23,9 @@ def get_level(name, settings_level):
         return level_dict[settings_level['default']]
 
 
-def get_logger(filepath, settings):
+def get_logger(name, settings):
     """Creates a custom logger with date and time"""
-
-    folder, name = split_filepath(filepath)
-
-    if 'log_dir' in settings:
-        folder = settings['log_dir']
+    folder = settings['log_dir']
 
     level = get_level(name, settings['logger']['levels'])
 

@@ -12,15 +12,16 @@ from uthportal.util import truncate_str
 class BaseTask(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, path, file_path, settings, database_manager, **kwargs):
+    def __init__(self, path, settings, database_manager, **kwargs):
         self.settings = settings
-        self.logger = get_logger(file_path, self.settings)
-
         self.path = path
+        self.id = path.split('.')[-1]
+
+        self.logger = get_logger(self.id, self.settings)
+
         self.timeout = self.settings['network']['timeout']
         self.database_manager = database_manager
 
-        self.id = path.split('.')[-1]
         self.db_collection = '.'.join( path.split('.')[:-1] )
 
     def __call__(self):
@@ -202,4 +203,3 @@ class BaseTask(object):
             return document[keys[-1]]
         else:
             return None
-

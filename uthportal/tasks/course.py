@@ -10,8 +10,8 @@ from uthportal.util import fix_urls, get_soup, parse_rss
 class CourseTask(BaseTask):
     task_type = 'CourseTask'
 
-    def __init__(self, path, file_path, settings, database_manager):
-        super(CourseTask, self).__init__(path, file_path, settings, database_manager)
+    def __init__(self, path, settings, database_manager):
+        super(CourseTask, self).__init__(path, settings, database_manager)
 
         self.update_fields =[ 'announcements.site', 'announcements.eclass' ]
         self.db_query = { 'code' : self.id }
@@ -114,4 +114,3 @@ class CourseTask(BaseTask):
                 entry['title'] = '%s - %s' % (self.id.upper(), entry_date_str)
 
         return entries
-

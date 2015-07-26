@@ -118,7 +118,7 @@ class Server(object):
 
     def __init__(self, database_manager, settings):
         self.settings = settings
-        self.logger = get_logger(__file__, self.settings)
+        self.logger = get_logger('server', self.settings)
         self.__database_manager = database_manager
 
         self.__process = None
@@ -154,4 +154,3 @@ class Server(object):
     def __start_flask(self):
         server_settings = self.settings['server']
         app.run(host = server_settings['host'], port = server_settings['port'])
-

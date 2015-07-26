@@ -3,6 +3,7 @@ import json
 import os
 import stat
 import sys
+from inspect import stack
 
 from uthportal.logger import get_logger
 
@@ -49,8 +50,10 @@ class Configuration(object):
     }
 
     def __init__(self):
+        print stack()[1][3]
+        self.default_settings['log_dir'] = os.path.dirname(os.path.abspath(sys.argv[0]))
         self.settings = self.default_settings
-        self.logger = get_logger(__file__, self.settings)
+        self.logger = get_logger('configure', self.settings)
         self.load_settings()
 
     def get_settings(self):
@@ -109,4 +112,3 @@ class Configuration(object):
         if st.st_mode & 0xFFF != 0600 :
             self.logger.warn("Fixing permissions...")
             os.chmod(CONFIG_FILE, 0600)
-

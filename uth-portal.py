@@ -15,7 +15,7 @@ class UthPortal(object):
     def __init__(self):
         self.configuration = Configuration()
         self.settings = self.configuration.get_settings()
-        self.logger = get_logger(__file__, self.settings)
+        self.logger = get_logger('uth-portal', self.settings)
 
        #TODO: Do this check in configuration manager
         if 'scheduler' not in self.settings and 'database' not in self.settings:
@@ -55,10 +55,9 @@ class UthPortal(object):
                     # class name: ce121
                     # this is to avoid importing interface/base classes
                     if isclass(obj) and (name in current_module.__name__):
-                        self.logger.info('Importing: %s object: %s' % (name, obj))
+                        self.logger.debug('Importing: %s object: %s' % (name, obj))
                         class_name = name
                         instance = obj(current_module.__name__,
-                                        current_path + '/' + name,
                                         self.settings,
                                         self.db_manager)
 
@@ -74,6 +73,7 @@ class UthPortal(object):
                     current_task = current_task[task]
 
         self.tasks = tasks
+        self.logger.info('Loaded %s tasks' % len(self.tasks))
 
     def _import_error(self, name):
         self.logger.error("Error importing module %s" % name)
@@ -145,9 +145,10 @@ def main():
 
     uth_portal._force_update()
 
+    get_logger('py.warnings', uth_portal.settings)
+
     while True:
         sleep(2)
 
 if __name__ == '__main__' :
     main()
-

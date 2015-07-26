@@ -10,8 +10,8 @@ from uthportal.util import get_soup
 class AnnouncementTask(BaseTask):
     task_type = 'AnnouncementTask'
 
-    def __init__(self, path, file_path, settings, database_manager, **kwargs):
-        super(AnnouncementTask, self).__init__(path, file_path, settings, database_manager)
+    def __init__(self, path, settings, database_manager, **kwargs):
+        super(AnnouncementTask, self).__init__(path, settings, database_manager)
 
         self.update_fields = ['entries']
         self.db_query = { 'type': self.id }
@@ -115,4 +115,3 @@ class AnnouncementTask(BaseTask):
             return document
         else:
             self.logger.error('No auth info found for type "%s"' % type)
-

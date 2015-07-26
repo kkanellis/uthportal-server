@@ -20,7 +20,7 @@ LINE_SPLITTER = 80 * '-'
 class Scheduler(object):
     def __init__(self, tasks, settings):
         self.settings = settings
-        self.logger = get_logger(__file__, self.settings)
+        self.logger = get_logger('scheduler', self.settings)
 
         self.intervals = self.settings['scheduler']['intervals']
 
@@ -168,4 +168,3 @@ class Scheduler(object):
                 new_dict[new_key] = d[key]
 
         return new_dict
-

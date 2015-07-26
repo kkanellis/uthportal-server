@@ -12,8 +12,8 @@ class FoodmenuTask(BaseTask):
     task_type = 'FoodmenuTask'
     weekdays = [ 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή' ]
 
-    def __init__(self, path, file_path, settings, database_manager):
-        super(FoodmenuTask, self).__init__(path, file_path, settings, database_manager)
+    def __init__(self, path, settings, database_manager):
+        super(FoodmenuTask, self).__init__(path, settings, database_manager)
 
         self.update_fields = [ 'menu' ]
         self.db_query = { 'city' : self.id }
@@ -140,4 +140,3 @@ class FoodmenuTask(BaseTask):
             pretty_text = pretty_text[:new_end]
 
         return pretty_text
-
