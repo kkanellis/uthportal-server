@@ -15,7 +15,7 @@ class UthPortal(object):
     def __init__(self):
         self.configuration = Configuration()
         self.settings = self.configuration.get_settings()
-        self.logger = get_logger('uth-portal', self.settings)
+        self.logger = get_logger('uthportal', self.settings)
 
        #TODO: Do this check in configuration manager
         if 'scheduler' not in self.settings and 'database' not in self.settings:
@@ -34,11 +34,13 @@ class UthPortal(object):
 
 
     def load_tasks(self):
+        self.logger.info("Loading modules...")
         current_path =  dirname(abspath(__file__))
         full_libary_path = current_path + '/' + self.settings['library_path']
-        self.logger.info('Modules will be loaded from "%s"' % full_libary_path)
+        self.logger.debug('Modules will be loaded from "%s"' % full_libary_path)
 
         tasks = {}
+        tasks_num = 0
         for loader, module, is_pkg in walk_packages(
                 [full_libary_path],
                 onerror = self._import_error):
@@ -56,6 +58,7 @@ class UthPortal(object):
                     # this is to avoid importing interface/base classes
                     if isclass(obj) and (name in current_module.__name__):
                         self.logger.debug('Importing: %s object: %s' % (name, obj))
+                        tasks_num += 1
                         class_name = name
                         instance = obj(current_module.__name__,
                                         self.settings,
@@ -73,7 +76,7 @@ class UthPortal(object):
                     current_task = current_task[task]
 
         self.tasks = tasks
-        self.logger.info('Loaded %s tasks' % len(self.tasks))
+        self.logger.info('Loaded %s tasks' % tasks_num)
 
     def _import_error(self, name):
         self.logger.error("Error importing module %s" % name)
@@ -94,6 +97,7 @@ class UthPortal(object):
         self.start_server()
 
     def _start_server(self):
+        self.db_manager.connect()
         self.server.start()
 
     def _stop_server(self):
@@ -130,7 +134,7 @@ from time import sleep
 uth_portal = None
 
 def signal_handler(signal, frame):
-    uth_portal.logger.warn('User interrupt! Exiting....')
+    uth_portal.logger.info('User interrupt! Exiting....')
 
     uth_portal.stop()
     sys.exit(0)
@@ -143,6 +147,7 @@ def main():
     uth_portal = UthPortal()
     uth_portal.start()
 
+    uth_portal.logger.info('Uthportal started successfully!')
     uth_portal._force_update()
 
     get_logger('py.warnings', uth_portal.settings)

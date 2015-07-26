@@ -38,8 +38,7 @@ class Configuration(object):
                     'mongo': 'WARN',
                     'scheduler': 'WARN',
                     'apscheduler': 'WARN',
-                    'uth-portal': 'WARN',
-                    'uthportal': 'WARN'
+                    'uthportal': 'INFO'
                 }
             },
             'network': {
