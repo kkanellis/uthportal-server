@@ -34,9 +34,9 @@ class Configuration(object):
                 'max_size': 10000000,
                 'logs_backup_count': 3,
                 'levels': {
-                    'default': 'WARN',
-                    'mongo': 'WARN',
-                    'scheduler': 'WARN',
+                    'default': 'INFO',
+                    'mongo': 'INFO',
+                    'scheduler': 'INFO',
                     'apscheduler': 'WARN',
                     'uthportal': 'INFO'
                 }

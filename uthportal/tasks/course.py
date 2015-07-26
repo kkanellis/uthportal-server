@@ -45,7 +45,7 @@ class CourseTask(BaseTask):
     def __check_site(self):
         link = self._get_document_field(self.document, 'announcements.link_site')
         if not link:
-            self.logger.info('"link_site" not found in document!')
+            self.logger.debug('"link_site" not found in document!')
             return None
 
         html = self.fetch(link)
@@ -75,7 +75,7 @@ class CourseTask(BaseTask):
     def __check_eclass(self):
         link = self._get_document_field(self.document, 'announcements.link_eclass')
         if not link:
-            self.logger.info('"link_eclass" not found in document!')
+            self.logger.debug('"link_eclass" not found in document!')
             return None
 
         html = self.fetch(link)
