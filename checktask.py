@@ -85,7 +85,7 @@ def check_task(task_path, presult = False, outfile = None):
 
     # Initialize & call the task
     print '\nInitiallizing task...'
-    task_instance = task_class('.'.join(spath), path, settings, db_manager)
+    task_instance = task_class('.'.join(spath), settings, db_manager)
     print '\nRunning task...'
     task_instance.__call__()
 
