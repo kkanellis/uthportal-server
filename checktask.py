@@ -52,7 +52,7 @@ def check_task(task_path, presult = False, outfile = None):
         print 'Valid task types are: \n\t%s' % "\n\t".join(FIELDS_DICT.keys())
         sys.exit(1)
 
-    path = settings['library_path'] + '/' + '/'.join(spath)
+    path = 'uthportal/' + settings['library_path'] + '/' + '/'.join(spath)
     classname = spath[-1]
 
     # Retrieve task class
