@@ -1,9 +1,5 @@
 #!/usr/bin/env python2.7
 
-
-
-
-
 import signal
 import sys
 from time import sleep
