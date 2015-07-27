@@ -13,6 +13,12 @@ CONFIG_FILE = 'config.json'
 class Configuration(object):
 
     default_settings = {
+            'auth': {
+                'inf-site': {
+                    'username': '',
+                    'password': ''
+                }
+            },
             'database': {
                 'host': 'localhost',
                 'port': 27017,

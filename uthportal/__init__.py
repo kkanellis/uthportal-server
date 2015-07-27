@@ -8,7 +8,6 @@ from uthportal.database.mongo import MongoDatabaseManager
 from uthportal.scheduler import Scheduler
 from uthportal.server import Server
 
-
 class UthPortal(object):
 
     def __init__(self):
