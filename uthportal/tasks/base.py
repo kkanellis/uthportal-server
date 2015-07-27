@@ -26,7 +26,7 @@ class BaseTask(object):
 
     def __call__(self):
         """This is the method called from the Scheduler when this object is
-        next in queue"""
+        next in queue (and about to be executed) """
 
         if not hasattr(self, 'document') or not self.document:
             self.logger.error('Task has no document attribute or document is empty. Task stalled!')
@@ -58,8 +58,9 @@ class BaseTask(object):
 
         self.logger.debug('Fetched successfully! [%d]' % page.status_code)
 
-        # Change page encoding to utf-8 so no more unicode handler is needed
+        # Change page encoding to utf-8 so no special handling for encoding is needed
         page.encoding = 'utf-8'
+
         return page.text
 
     @abstractmethod
@@ -68,7 +69,7 @@ class BaseTask(object):
             new_fields where new data are stored after fecthing procedures. These are compared with the
             current data (stored in self.document)"""
 
-        #Check if 'new_fields' arg is present
+        # Check if 'new_fields' arg is present
         if 'new_fields' in kwargs:
             new_fields = kwargs['new_fields']
         else:
@@ -81,11 +82,11 @@ class BaseTask(object):
                 self.logger.error('Field "%s" not present in "new_fields" dict. Stalling task!' % field)
                 return
 
-        #Get self.document's update_fields
+        # Get self.document's update_fields
         old_fields = { field: self._get_document_field(self.document, field)
                             for field in self.update_fields }
 
-        #Checking for differences in the according update_fields """
+        # Checking for differences in the according update_fields
         differ = False
         for field in self.update_fields:
             if new_fields[field] and old_fields[field] != new_fields[field]:
@@ -103,12 +104,12 @@ class BaseTask(object):
             self.logger.debug('Archiving old document...')
             self.archive()
 
-            #Update new fields """
+            # Update new fields
             self.logger.debug('Updating new fields...')
             for field in self.update_fields:
                 self._set_document_field(self.document, field, new_fields[field])
 
-            #Update remaining fields """
+            # Update remaining fields
             self._set_document_field(self.document, 'first_updated', now)
             self._set_document_field(self.document, 'last_updated', now)
 
