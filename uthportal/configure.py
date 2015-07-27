@@ -44,7 +44,7 @@ class Configuration(object):
             'network': {
                 'timeout': 10
             },
-            'library_path': 'uthportal/library',
+            'library_path': 'library',
             'tmp_path': 'uthportal/tmp'
     }
 
