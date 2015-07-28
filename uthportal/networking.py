@@ -66,6 +66,9 @@ class ThreadedSocketServer(object):
         self._stop_event.set()
         for thread in self._threads:
             self.logger.debug("Waiting for thread: [%s]" % thread.name)
+            if thread.is_alive():
+                self.logger.warn("Kicking connected user.")
+                thread.kick()
             thread.join()
         self._socket.close()
         self.logger.info("Socket server shut-down.")
@@ -77,7 +80,8 @@ class ThreadedSocketServer(object):
             conn, addr = self._socket.accept()
             self.logger.debug("Connected with %s:%s" % (addr[0], addr[1]))
 
-            this_thread = ClientThread(addr[0], addr[1], conn, self.logger)
+            this_thread = ClientThread(addr[0], addr[1], conn,
+                self.auth_function, self.handle_function, self.logger)
             this_thread.start()
             self._threads.append(this_thread)
         else:
@@ -87,14 +91,20 @@ class ThreadedSocketServer(object):
 
 class ClientThread(threading.Thread):
 
-    def __init__(self, ip, port, socket, logger):
+    def __init__(self, ip, port, socket, auth, handle, logger):
         super(ClientThread, self).__init__()
         self.ip = ip
         self.port = port
         self.name = "Client: {0}:{1}".format(ip, port)
+        socket.settimeout(2)
         self.socket = socket
         self.logger = logger
+        self._kick = threading.Event()
         self.logger.debug("New thread spwaned for %s:%s" % (self.ip, self.port))
+
+    def kick(self):
+        self.logger.debug("Kick request for %s" % self.name)
+        self._kick.set()
 
     def run(self):
         self.logger.info("[+] Connection from : %s:%s" % (self.ip, self.port))
@@ -104,7 +114,15 @@ class ClientThread(threading.Thread):
         data = "dummydata"
 
         while len(data):
-            data = self.socket.recv(2048)
-            self.socket.send("You sent me : "+data)
+            if self._kick.is_set():
+                        self.socket.send("You are being kicked!")
+                        self.socket.close()
+                        self.logger.info("[-] Client on %s:%s kicked." % (self.ip, self.port))
+                        return
+            try:
+                data = self.socket.recv(2048)
+                self.socket.send("You sent me : "+data)
+            except socket.timeout, e:
+                pass
 
-        self.logger.debug("[-] Client on %s:%s disconnected." % (self.ip, self.port))
+        self.logger.info("[-] Client on %s:%s disconnected." % (self.ip, self.port))
