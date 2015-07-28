@@ -123,3 +123,15 @@ class UthPortal(object):
     def _save_settings(self):
         self.configuration.set_settings(self.settings)
         self.configuration.save_settings()
+
+
+INFO = {
+    "version": "0.7A",
+    "developers": "kkanelis, GeorgeTG",
+    "description": """
+    UTHPortal is a web-application which is targeted to students
+    currently attending University of Thessaly. It's main goal is to provide
+    easy and direct access to the necessary information and services, which
+    are otherwise scattered around different sites/locations.
+    """
+}
