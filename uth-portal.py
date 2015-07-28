@@ -7,6 +7,7 @@ from time import sleep
 
 from uthportal import UthPortal
 from uthportal.logger import get_logger
+from uthportal.networking import ThreadedSocketServer
 
 uth_portal = None
 socket_server = None
@@ -14,12 +15,12 @@ socket_server = None
 def signal_handler(signal, frame):
     if uth_portal:
         uth_portal.logger.info('User interrupt! Exiting....')
-
         uth_portal.stop()
+
     if socket_server:
         socket_server.shutdown()
 
-    sys.exit(0)
+        sys.exit(0)
 
 def main():
     #Handle SIGINT
@@ -33,6 +34,8 @@ def main():
     #uth_portal._force_update()
 
     get_logger('py.warnings', uth_portal.settings)
+    socket_server  = ThreadedSocketServer(uth_portal.settings)
+    socket_server.listen()
 
     while True:
         sleep(2)
