@@ -22,6 +22,17 @@ def signal_handler(signal, frame):
 
         sys.exit(0)
 
+def auth_function(info):
+    #info should be a means of authentication
+    #TODO:implement this
+    if info[0] == 'uthportal' and info[1] == "HardPass123":
+        return True
+    else:
+        return False
+
+def handle_command(command):
+    return "Command handled by uthportal :" + command
+
 def main():
     #Handle SIGINT
     signal.signal(signal.SIGINT, signal_handler)
@@ -35,6 +46,8 @@ def main():
 
     get_logger('py.warnings', uth_portal.settings)
     socket_server  = ThreadedSocketServer(uth_portal.settings)
+    socket_server.set_handle_function(handle_command)
+    socket_server.set_auth_function(auth_function)
     socket_server.listen()
 
     while True:

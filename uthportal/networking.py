@@ -1,6 +1,9 @@
+# encoding: utf-8
+
 import socket
 import threading
 import SocketServer
+import re
 
 from logger import get_logger
 
@@ -10,8 +13,8 @@ class ThreadedSocketServer(object):
         self.logger = get_logger('socket_server', settings)
         self.settings = settings['socket_server']
 
-        self.auth_function = None
-        self.handle_function = None
+        self._auth_function = None
+        self._handle_function = None
 
         self.port = self.settings['port']
         self.host = self.settings['host']
@@ -29,6 +32,13 @@ class ThreadedSocketServer(object):
 
         self._listening = False
 
+    def set_handle_function(self, function):
+        self._handle_function = function
+
+
+    def set_auth_function(self, function):
+        self._auth_function = function
+
     def listen(self):
         if not self._server_thread:
             #The thread in which our connections are accepted
@@ -38,6 +48,7 @@ class ThreadedSocketServer(object):
 
         if not self._socket:
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.logger.debug("Socket created!")
 
         if not self._listening:
@@ -81,25 +92,38 @@ class ThreadedSocketServer(object):
             self.logger.debug("Connected with %s:%s" % (addr[0], addr[1]))
 
             this_thread = ClientThread(addr[0], addr[1], conn,
-                self.auth_function, self.handle_function, self.logger)
+                self._auth_function, self._handle_function, self.logger)
             this_thread.start()
             self._threads.append(this_thread)
         else:
             self._stop_event.clear()
             self._listening = False
+            self._server_thread = None
 
 
 class ClientThread(threading.Thread):
+    auth_regex = '{auth}{u:([A-Za-z0-9]+(?:[. _ \\- @][A-Za-z0-9]+)*)}{p:((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?!.*\\s).{4,12})}{auth}'
+    #{auth}{u:uthportal}{p:HardPass123}{auth}
+    auth_sock_re = re.compile(auth_regex)
+    #TODO: messages should have a format too.
 
     def __init__(self, ip, port, socket, auth, handle, logger):
         super(ClientThread, self).__init__()
         self.ip = ip
         self.port = port
         self.name = "Client: {0}:{1}".format(ip, port)
-        socket.settimeout(2)
+
         self.socket = socket
+        #time out the connection on purpose to check for events
+        #TODO: maybe find a better way
+        socket.settimeout(2)
         self.logger = logger
+
         self._kick = threading.Event()
+
+        self._handle_function = handle
+        self._auth_function = auth
+
         self.logger.debug("New thread spwaned for %s:%s" % (self.ip, self.port))
 
     def kick(self):
@@ -109,19 +133,44 @@ class ClientThread(threading.Thread):
     def run(self):
         self.logger.info("[+] Connection from : %s:%s" % (self.ip, self.port))
 
-        self.socket.send("\nWelcome to the server\n\n")
+        self.socket.send("Welcome to the UthPortal server!\n\n")
 
-        data = "dummydata"
+        auth_ok = False
+        max_tries = 0
+        auth_info = []
+
+        data = 'dummydata'
 
         while len(data):
             if self._kick.is_set():
-                        self.socket.send("You are being kicked!")
+                        self.socket.send("Connection termination requested.\n\r")
+                        self.socket.shutdown(socket.SHUT_RDWR)
                         self.socket.close()
                         self.logger.info("[-] Client on %s:%s kicked." % (self.ip, self.port))
                         return
             try:
                 data = self.socket.recv(2048)
-                self.socket.send("You sent me : "+data)
+                if not auth_ok:
+                    data = data.replace("\n","").replace("\r","") #remove ws
+                    #client has to authenticate
+                    match_result = self.auth_sock_re.search(data)
+                    if match_result:
+                        auth_info = [match_result.group(1), match_result.group(2)]
+                        auth_ok = self._auth_function(auth_info)
+                        if not auth_ok:
+                            self.socket.send("Access denied.")
+                            max_tries += 1
+                            if max_tries > 2:
+                                self._kick.set()
+                        else:
+                            self.socket.send("User %s authenticated successfuly.\n" % auth_info[0])
+                    else:
+                        self.socket.send("Bad authentication data format.")
+
+                    continue #don't handle auth data
+
+                #Auth is ok, handle user data
+                self.socket.send(self._handle_function(data))
             except socket.timeout, e:
                 pass
 
