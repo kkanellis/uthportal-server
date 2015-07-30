@@ -60,13 +60,13 @@ class CourseTask(BaseTask):
 
         try:
             entries = self.parse_site(bsoup)
-        except Exception, e:
+        except Exception as e:
             self.logger.error('parse_site: %s', unicode(e))
             return None
 
         try:
             entries = self.postprocess_site(entries, link)
-        except Exception, e:
+        except Exception as e:
             self.logger.error('post_process: %s', unicode(e))
             return None
 
@@ -86,7 +86,7 @@ class CourseTask(BaseTask):
         self.logger.debug('Parsing eclass ...')
         try:
             entries = parse_rss(html)
-        except Exception, e:
+        except Exception as e:
             self.logger.error('parse_rss: %s' % unicode(e))
             return None
 

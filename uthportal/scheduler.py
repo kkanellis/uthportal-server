@@ -81,7 +81,7 @@ class Scheduler(object):
 
         try:
             self.sched.start()
-        except SchedulerAlreadyRunningError, e:
+        except SchedulerAlreadyRunningError as e:
             self.logger.warning(e)
 
 
@@ -94,7 +94,7 @@ class Scheduler(object):
 
         try:
             self.sched.shutdown(wait=wait)
-        except SchedulerNotRunningError, e:
+        except SchedulerNotRunningError as e:
             self.logger.warning(e)
 
     def add_task(self, id, func, interval=None):
@@ -116,7 +116,7 @@ class Scheduler(object):
             else:
                 self.logger.error('"interval" is not an instance of [time|None]')
                 return
-        except ConflictingIdError, e:
+        except ConflictingIdError as e:
             self.logger.warning(e)
 
     def remove_task(self, id):
@@ -127,7 +127,7 @@ class Scheduler(object):
 
         try:
             self.sched.remove_job(id)
-        except JobLookupError, e:
+        except JobLookupError as e:
             self.logger.warning(e)
 
     def force_update(self, job_id=None):

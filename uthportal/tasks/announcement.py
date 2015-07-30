@@ -51,8 +51,6 @@ class AnnouncementTask(BaseTask):
                     auth_settings[auth_type]
                     )
 
-
-
     def parse(self, bsoup):
         """Parse the fetced document"""
         return None
@@ -91,7 +89,7 @@ class AnnouncementTask(BaseTask):
 
         try:
             entries = self.parse(bsoup)
-        except Exception, e:
+        except Exception as e:
             self.logger.error('parse: %s' % unicode(e))
             return None
 

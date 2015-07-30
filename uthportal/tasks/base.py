@@ -90,7 +90,7 @@ class BaseTask(object):
         differ = False
         for field in self.update_fields:
             if new_fields[field] and old_fields[field] != new_fields[field]:
-                self.logger.debug(
+                self.logger.info(
                         truncate_str(
                             'New entries in field "%s"' % new_fields[field],
                             150)
