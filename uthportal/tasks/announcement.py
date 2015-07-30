@@ -72,7 +72,7 @@ class AnnouncementTask(BaseTask):
         link = self.document['link']
         session = requests.Session()
 
-        if self.auth_manager:
+        if hasattr(self, 'auth_manager'):
             # Perform authentication
             self.auth_manager.auth(session)
             if not self.auth_manager.success:
