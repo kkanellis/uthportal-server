@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from uthportal.tasks.course import CourseTask
+
+from uthportal.library.inf.courses.ce232 import ce232
+
+class ce230(CourseTask):
+    document_prototype = {
+        'code': 'ce230',
+        'code_eclass': '',
+        'announcements': {
+            'link_site': 'http://inf-server.inf.uth.gr/courses/CE230/',
+            'link_eclass': '',
+        },
+        'info': {
+            'name': u'Ανάλυση Κυκλωμάτων',
+            'link_site': 'http://inf-server.inf.uth.gr/courses/CE230/',
+            'link_eclass': ''
+        }
+    }
+
+    def parse_site(self, bsoup):
+        return ce232.parse_site(bsoup)
+

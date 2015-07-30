@@ -12,7 +12,7 @@ class ce331(CourseTask):
             'link_eclass': 'http://eclass.uth.gr/eclass/modules/announcements/rss.php?c=MHX269'
         },
         'info': {
-            'name': u'Ηλεκτρομαγνητικά Πεδία',
+            'name': u'Ηλεκτρομαγνητικά Πεδία I',
             'link_site': '',
             'link_eclass': 'http://eclass.uth.gr/eclass/courses/MHX269/'
         }
