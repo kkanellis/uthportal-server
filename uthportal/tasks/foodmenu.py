@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from os import path, errno
+from os import path, errno, devnull
 from subprocess import call
 from datetime import datetime, timedelta
 
@@ -71,7 +71,7 @@ class FoodmenuTask(BaseTask):
 
         try:
             foodmenu = self.parse(html)
-        except Exception, e:
+        except Exception as e:
             self.logger.error('parse: %s' % e)
             return None
 
@@ -89,14 +89,18 @@ class FoodmenuTask(BaseTask):
         # Write the .doc menu to a file
         # set the arguments and make the call
         soffice_args = ['soffice', '--headless', '--convert-to', 'html:HTML', '--outdir', self.settings['tmp_path'], path_doc ]
-        try:
-            ret_code = call(soffice_args)
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                self.logger.error("soffice not found!")
+
+        # Open stream to write to /dev/null
+        with open(devnull, 'w') as DEV_NULL:
+            try:
+                ret_code = call(soffice_args, stdout=DEV_NULL)
+            except OSError as e:
+                if e.errno == errno.ENOENT:
+                    self.logger.error("soffice not found!")
+                else:
+                    self.logger.error('soffice: %s' % str(e))
+
                 return None
-            else:
-                raise
 
         if ret_code != 0 or (not path.exists(path_html)):
             self.logger.error('Could not convert .doc to .html')
