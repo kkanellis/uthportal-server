@@ -15,6 +15,6 @@ UTHPortal is a mobile application (powered by a web-service) which is targeted t
 - **[Universal Feed Parser](https://pythonhosted.org/feedparser/)**
 
 ## Licence
-UTHPortal-Server is released under GNU General Public Licence, Version 2.
+UTHPortal-Server is released under GNU General Public Licence, Version 3.
 
 See the [LICENCE](https://github.com/kkanellis/uthportal-server/blob/master/LICENCE.md) file for more details
