@@ -11,6 +11,7 @@ CONFIG_FILE = 'config.json'
 
 
 class Configuration(object):
+    required_keys = ['auth', 'database', 'notifier', 'server', 'scheduler', 'logger', 'library_path' ]
 
     default_settings = {
             'auth': {
@@ -24,6 +25,14 @@ class Configuration(object):
                 'port': 27017,
                 'db_name': 'uthportal'
             },
+            'notifier': {
+                'host': 'localhost',
+                'port': 5001
+            },
+            'server' : {
+                'host' : 'localhost',
+                'port' : 5000,
+            },
             'scheduler' : {
                 'apscheduler' : { },
                 'intervals' : {
@@ -31,10 +40,6 @@ class Configuration(object):
                     'FoodmenuTask': { 'hours' : 1 },
                     'AnnouncementTask': { 'minutes' : 30 }
                 }
-            },
-            'server' : {
-                'host' : '127.0.0.1',
-                'port' : 5000,
             },
             'logger': {
                 'max_size': 10000000,
@@ -51,14 +56,20 @@ class Configuration(object):
                 'timeout': 10
             },
             'library_path': 'library',
-            'tmp_path': 'uthportal/tmp'
+            'tmp_path': 'tmp'
     }
 
     def __init__(self):
         self.default_settings['log_dir'] = os.path.dirname(os.path.abspath(sys.argv[0])) + '/logs'
         self.settings = self.default_settings
+
         self.logger = get_logger('init', self.settings)
         self.load_settings()
+
+        # Check if self.settings contains all required keys
+        if not all( key in self.settings for key in self.required_keys ):
+            self.logger.error('Missing required key(s): "%s"' % ', '.join(self.required_keys))
+            sys.exit(1)
 
     def get_settings(self):
         return self.settings
@@ -91,13 +102,13 @@ class Configuration(object):
 
         if 'log_dir' in self.settings:
             log_dir = self.settings['log_dir']
-            log_dir = os.path.abspath(log_dir) #convert to absolute path
+            log_dir = os.path.abspath(log_dir) # convert to absolute path
             self.settings['log_dir'] = log_dir
         else:
             self.logger.warn('No log_dir specified. Using defualt')
             self.settings['log_dir'] = self.default_settings['log_dir']
 
-        #Update our logger based on loaded settings
+        # Update our logger based on loaded settings
         self.logger = get_logger('configure', self.settings)
         self.logger.info('Loaded new settings')
 

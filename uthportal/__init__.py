@@ -8,17 +8,24 @@ from uthportal.database.mongo import MongoDatabaseManager
 from uthportal.scheduler import Scheduler
 from uthportal.server import Server
 
+
+INFO = {
+    "version": "0.7A",
+    "developers": "kkanelis, GeorgeTG",
+    "description": """
+    UTHPortal is a web-application which is targeted to students
+    currently attending University of Thessaly. It's main goal is to provide
+    easy and direct access to the necessary information and services, which
+    are otherwise scattered around different sites/locations.
+    """
+}
+
 class UthPortal(object):
 
     def __init__(self):
         self.configuration = Configuration()
         self.settings = self.configuration.get_settings()
         self.logger = get_logger('uthportal', self.settings)
-
-       #TODO: Do this check in configuration manager
-        if 'scheduler' not in self.settings and 'database' not in self.settings:
-            self.logger.error('Missing keys from settings [database, scheduler]')
-            return
 
         self.db_manager = MongoDatabaseManager(self.settings)
         self.db_manager.connect()
@@ -110,7 +117,7 @@ class UthPortal(object):
 
         self.logger.debug('Scheduler started successfully!')
 
-    def _force_update(self, job_id = None):
+    def _force_update(self, job_id=None):
         self.scheduler.force_update(job_id)
 
     def _stop_scheduler(self):
@@ -125,13 +132,3 @@ class UthPortal(object):
         self.configuration.save_settings()
 
 
-INFO = {
-    "version": "0.7A",
-    "developers": "kkanelis, GeorgeTG",
-    "description": """
-    UTHPortal is a web-application which is targeted to students
-    currently attending University of Thessaly. It's main goal is to provide
-    easy and direct access to the necessary information and services, which
-    are otherwise scattered around different sites/locations.
-    """
-}
