@@ -39,7 +39,7 @@ def not_implemented(error):
 def json_error(code, message):
     return flask.jsonify( {'error': {'code': code, 'message': message} } ), code
 
-@app.route('/api/v1/info/<path:url>')
+@app.route('/api/v1/info/<path:url>', methods=['GET'])
 def get_info(url):
     url_parts = url.split('/')
 
