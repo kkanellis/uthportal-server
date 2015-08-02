@@ -1,3 +1,7 @@
+#!/usr/bin/python
+# -*- coding: utf8 -*-
+
+import sys
 from os.path import dirname, abspath
 from pkgutil import walk_packages, iter_modules
 from inspect import getmembers, isclass
@@ -5,6 +9,7 @@ from inspect import getmembers, isclass
 from uthportal.configure import Configuration
 from uthportal.logger import get_logger
 from uthportal.database.mongo import MongoDatabaseManager
+#from uthportal.notifier import Notifier
 from uthportal.scheduler import Scheduler
 from uthportal.server import Server
 
@@ -28,11 +33,16 @@ class UthPortal(object):
         self.logger = get_logger('uthportal', self.settings)
 
         self.db_manager = MongoDatabaseManager(self.settings)
-        self.db_manager.connect()
+        if not self.db_manager.connect():
+            self.logger.info('Exiting...')
+            sys.exit(1)
 
         self.load_tasks()
 
+        # TODO: This should be removed cause it will be independent
+        # Server will be run in different VM, so it will be autonomous
         self.server = Server(self.db_manager, self.settings)
+
         self.scheduler = Scheduler(
                 self.tasks,
                 self.settings)
