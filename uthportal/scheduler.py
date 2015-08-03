@@ -11,6 +11,7 @@ as well as perform the neccessary operations on it.
 import gevent
 from apscheduler.schedulers.base import BaseScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers import SchedulerAlreadyRunningError, SchedulerNotRunningError
 from apscheduler.jobstores.base import JobLookupError, ConflictingIdError
 
 from uthportal.logger import get_logger
@@ -23,6 +24,7 @@ class Scheduler(object):
         self.logger = get_logger('scheduler', self.settings)
 
         self.intervals = self.settings['scheduler']['intervals']
+        self.apscheduler = { 'apscheduler': self.settings['scheduler']['apscheduler'] }
 
         if not isinstance(tasks, dict):
             self.logger.error('tasks is not a dictionary')
@@ -43,13 +45,15 @@ class Scheduler(object):
         #self.logger.debug('Checking tasks paths!')
         # TODO: Check if paths are valid
 
-    def init(self, **apscheduler_kwargs):
+    def init(self):
         """ Initializes the queue, and adds the tasks """
 
         self.logger.info('Initilizing APScheduler...')
 
-        ap_logger = get_logger('apscheduler', self.settings)
-        self.sched = BackgroundScheduler(logger=ap_logger, **apscheduler_kwargs)
+        apsched_kwargs = self._flatten_dict(self.apscheduler, '')
+        apsched_kwargs['apscheduler.logger'] = get_logger('apscheduler', self.settings)
+
+        self.sched = BackgroundScheduler(apsched_kwargs)
 
         for (id, task) in self.tasks.items():
             task_type = task.task_type
@@ -151,7 +155,12 @@ class Scheduler(object):
 
     def __run_job(self, job):
         if job.func:
-            job.func()
+            # Add the job to the scheduler and run it just once
+            self.sched.add_job(job.func)
+
+            # If we explicity call job.func() then we block the thread and we get multiple
+            # missed executions from apscheduler
+            # job.func()
         else:
             self.logger.warn("Job %s has a None type callable func" % job.id)
 

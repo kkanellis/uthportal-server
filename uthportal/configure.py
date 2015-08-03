@@ -34,7 +34,13 @@ class Configuration(object):
                 'port' : 5000,
             },
             'scheduler' : {
-                'apscheduler' : { },
+                'apscheduler': {
+                    'job_defaults': {
+                        'coalesce': True,
+                        'max_instances': 1,
+                        'misfire_grace_time': 300
+                    }
+                },
                 'intervals' : {
                     'CourseTask' : { 'minutes' : 5 },
                     'FoodmenuTask': { 'hours' : 1 },

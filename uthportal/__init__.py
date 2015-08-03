@@ -122,7 +122,7 @@ class UthPortal(object):
     def _start_scheduler(self):
         self.logger.debug('Starting the scheduler')
 
-        self.scheduler.init(**self.settings['scheduler']['apscheduler'])
+        self.scheduler.init()
         self.scheduler.start()
 
         self.logger.debug('Scheduler started successfully!')
