@@ -9,13 +9,14 @@ from uthportal.tasks.course import CourseTask
 class ce321(CourseTask):
     document_prototype = {
         'code': 'ce321',
-        'code_eclass': '',
         'announcements': {
             'link_site': 'http://inf-server.inf.uth.gr/courses/CE321/',
             'link_eclass': ''
         },
         'info': {
             'name': u'Λειτουργικά Συστήματα',
+            'code_site': 'HY321',
+            'code_eclass': '',
             'link_site': 'http://inf-server.inf.uth.gr/courses/CE321/',
             'link_eclass': ''
         }

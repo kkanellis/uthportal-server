@@ -9,15 +9,16 @@ from uthportal.tasks.course import CourseTask
 class ce120(CourseTask):
     document_prototype = {
         'code': 'ce120',
-        'code_eclass': '',
         'announcements': {
             'link_site': 'http://inf-server.inf.uth.gr/courses/CE120/',
             'link_eclass': ''
         },
         'info': {
             'name': u'Προγραμματισμός I',
+            'code_site': 'HY120',
+            'code_eclass': '',
             'link_site': 'http://inf-server.inf.uth.gr/courses/CE120/',
-            'link_eclass': ''
+            'link_eclass': '',
         }
     }
 

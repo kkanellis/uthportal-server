@@ -7,13 +7,14 @@ from datetime import datetime
 class ce121(CourseTask):
     document_prototype = {
         'code': 'ce121',
-        'code_eclass': '',
         'announcements': {
             'link_site':'http://inf-server.inf.uth.gr/courses/CE121/',
             'link_eclass': ''
         },
         'info': {
             'name': u'Προγραμματισμός II',
+            'code_site': 'HY121',
+            'code_eclass': '',
             'link_site': 'http://inf-server.inf.uth.gr/courses/CE121/',
             'link_eclass': ''
         }

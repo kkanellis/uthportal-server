@@ -7,13 +7,14 @@ from uthportal.util import parse_rss
 class ce211(CourseTask):
     document_prototype = {
         'code': 'ce211',
-        'code_eclass': '',
         'announcements': {
             'link_site': 'http://inf-server.inf.uth.gr/mavcourses/diaeks/feed/',
             'link_eclass': ''
         },
         'info': {
             'name': u'Διαφορικές Εξισώσεις',
+            'code_site': 'HY211',
+            'code_eclass': '',
             'link_site': 'http://inf-server.inf.uth.gr/mavcourses/diaeks/',
             'link_eclass': ''
         }

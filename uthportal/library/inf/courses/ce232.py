@@ -8,13 +8,14 @@ from uthportal.tasks.course import CourseTask
 class ce232(CourseTask):
     document_prototype = {
         'code': 'ce232',
-        'code_eclass': '',
         'announcements': {
             'link_site': 'http://inf-server.inf.uth.gr/courses/CE232/',
             'link_eclass': ''
         },
         'info': {
             'name': u'Οργάνωση και Σχεδίαση Η/Υ',
+            'code_site': 'HY232',
+            'code_eclass': '',
             'link_site': 'http://inf-server.inf.uth.gr/courses/CE232/',
             'link_eclass': ''
         }

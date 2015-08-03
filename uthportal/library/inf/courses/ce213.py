@@ -8,13 +8,14 @@ from uthportal.tasks.course import CourseTask
 class ce213(CourseTask):
     document_prototype = {
         'code': 'ce213',
-        'code_eclass': '',
         'announcements': {
             'link_site': 'http://inf-server.inf.uth.gr/courses/CE213/news.html',
             'link_eclass': ''
         },
         'info': {
             'name': u'Αριθμητική Ανάλυση',
+            'code_site': u'HY213',
+            'code_eclass': '',
             'link_site': 'http://inf-server.inf.uth.gr/courses/CE213/',
             'link_eclass': ''
         }
