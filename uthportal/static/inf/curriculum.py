@@ -1,16 +1,26 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+"""
+Module for inf curriculum parsing
+
+If used for testing rus from base as:
+
+    python -m uthportal.static.inf.curriculum
+
+"""
+
+import os.path
 import json
 
 import requests
 from bs4 import BeautifulSoup
 
-from uthportal.configure import Contructing
+from uthportal.configure import Configuration
 
-HTML_PATH = 'curriculum.html'
+FILENAME = 'curriculum.html'
 
-def parse(html):
+def get_curriculum(html):
 
     bsoup = BeautifulSoup(html)
 
@@ -23,7 +33,6 @@ def parse(html):
     for (day, cc) in enumerate(divs):
         rows = cc.find_all('tr') # Split to rows
         for row in rows:
-            print row
             # Contructing entry
             entry = {
                 cell_key[index] : cell.text
@@ -49,17 +58,17 @@ def parse(html):
 
 
 def main():
-
     # Read html file contents
+    path = os.path.dirname(__file__) + '/' + FILENAME
     try:
-        with open(HTML_PATH, 'r') as f:
+        with open(path, 'r') as f:
             html = f.read().decode('utf8')
     except IOError as e:
-        print 'Cannot read from "%s". Please make sure the file exists' % HTML_PATH
+        print 'Cannot read from "%s". Please make sure the file exists' % path
         return
 
     try:
-        curriculum = parse(html)
+        curriculum = get_curriculum(html)
     except Exception as e:
         print 'Exception: %s' % e
         return
