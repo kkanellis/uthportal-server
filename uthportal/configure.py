@@ -60,7 +60,7 @@ class Configuration(object):
     }
 
     def __init__(self):
-        self.default_settings['log_dir'] = os.path.dirname(os.path.abspath(sys.argv[0])) + '/logs'
+        self.default_settings['log_dir'] = os.path.dirname(__file__) + '/logs'
         self.settings = self.default_settings
 
         self.logger = get_logger('init', self.settings)
