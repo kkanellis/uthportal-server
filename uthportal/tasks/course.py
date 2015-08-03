@@ -23,6 +23,12 @@ class CourseTask(BaseTask):
             if hasattr(self, 'document_prototype'):
                 self.logger.info('No document found in database. Using prototype')
                 self.document = self.document_prototype
+
+                # Calculate semester of course based on course code
+                year, _, spring = self.id[2:]
+                semester = (2 * int(year)) if int(spring) % 2 == 1 else (2 * int(year) - 1)
+                self._set_document_field(self.document, 'info.semester', semester)
+
                 self.save()
             else:
                 self.logger.error('No document_prototype is available!')
