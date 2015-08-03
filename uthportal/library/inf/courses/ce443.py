@@ -12,7 +12,7 @@ class ce443(CourseTask):
         },
         'info': {
             'name': u'Όραση Υπολογιστών',
-            'code_site':' u'HY443',
+            'code_site': u'HY443',
             'code_eclass': u'MHX272',
             'link_site': '',
             'link_eclass': 'http://eclass.uth.gr/eclass/courses/MHX272/'

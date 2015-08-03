@@ -13,7 +13,7 @@ class ce112(CourseTask):
         },
         'info': {
             'name': u'Γραμμική Άλγεβρα',
-            'code_site' u'HY112',
+            'code_site': u'HY112',
             'code_eclass': '',
             'link_site': 'http://inf-server.inf.uth.gr/mavcourses/ga/',
             'link_eclass': '',
