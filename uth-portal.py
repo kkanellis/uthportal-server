@@ -31,7 +31,7 @@ def auth_function(info):
         return False
 
 def handle_command(command):
-    return "Command handled by uthportal :" + command
+    return ("Command handled by uthportal :" + command[0], "info")
 
 def main():
     #Handle SIGINT

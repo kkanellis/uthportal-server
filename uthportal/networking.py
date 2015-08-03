@@ -2,8 +2,8 @@
 
 import socket
 import threading
-import SocketServer
-import re
+import json
+from time import sleep
 
 from logger import get_logger
 
@@ -102,11 +102,18 @@ class ThreadedSocketServer(object):
 
 
 class ClientThread(threading.Thread):
-    auth_regex = '{auth}{u:([A-Za-z0-9]+(?:[. _ \\- @][A-Za-z0-9]+)*)}{p:((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?!.*\\s).{4,12})}{auth}'
-    #{auth}{u:uthportal}{p:HardPass123}{auth}
-    auth_sock_re = re.compile(auth_regex)
-    #TODO: messages should have a format too.
+    #Communication is done via json encoded strings
+    # auth:{
+    #    uname: "username",
+    #    passwd: "passwd"
+    # }
 
+    # request:{
+    #     'cmd' : "command",
+    #     'args' : ["arg1", 2, 'arg3']
+    # }
+
+    #TODO: maybe use kwargs
     def __init__(self, ip, port, socket, auth, handle, logger):
         super(ClientThread, self).__init__()
         self.ip = ip
@@ -124,54 +131,85 @@ class ClientThread(threading.Thread):
         self._handle_function = handle
         self._auth_function = auth
 
+        self._authenticated = False
+        self._auth_tries_left = 3
+
         self.logger.debug("New thread spwaned for %s:%s" % (self.ip, self.port))
+
+    def send_message(self, content, type_ = "info"):
+        dict_ = {
+                "message":{
+                    "content" : content,
+                    "type" : type_
+                    }
+                }
+        self.socket.send(json.dumps(dict_))
 
     def kick(self):
         self.logger.debug("Kick request for %s" % self.name)
         self._kick.set()
 
+    def disconnect(self):
+        self.socket.shutdown(socket.SHUT_RDWR)
+        self.socket.close()
+
+    def _authenticate(self, data):
+        try :
+            auth_info = json.loads(data)
+            auth_info = auth_info["auth"]
+            auth_info = [auth_info["uname"], auth_info['passwd']]
+            self._authenticated = self._auth_function(auth_info)
+            if not self._authenticated:
+                self.send_message("Access denied.", "bad")
+                self._auth_tries_left -= 1
+            else:
+                self.send_message("User %s authenticated successfuly.\n" % auth_info[0])
+        except ValueError, KeyError:
+            self.send_message("Bad authentication data format.", "bad")
+            #Prevent auth request spam
+            self._auth_tries_left -= 1
+
+            if self._auth_tries_left == 0:
+                self._kick.set()
+
+    def _handle_request(self, data):
+        try:
+            request_info = json.loads(data)
+            request_info = request_info['request']
+            request_info = [request_info['cmd'], request_info['args']]
+
+            response, type_ = self._handle_function(request_info)
+            self.send_message(response, type_)
+
+        except ValueError, KeyError:
+            self.send_message("Bad request format", "bad")
+
+
     def run(self):
         self.logger.info("[+] Connection from : %s:%s" % (self.ip, self.port))
 
-        self.socket.send("Welcome to the UthPortal server!\n\n")
-
-        auth_ok = False
-        max_tries = 0
-        auth_info = []
+        self.send_message("Welcome to the UthPortal server!\n\n")
 
         data = 'dummydata'
 
         while len(data):
             if self._kick.is_set():
-                        self.socket.send("Connection termination requested.\n\r")
-                        self.socket.shutdown(socket.SHUT_RDWR)
-                        self.socket.close()
-                        self.logger.info("[-] Client on %s:%s kicked." % (self.ip, self.port))
-                        return
+                    self.send_message("Connection termination requested.\n\r")
+                    sleep(1)
+                    self.disconnect()
+                    self.logger.info("[-] Client on %s:%s kicked." % (self.ip, self.port))
+                    return
             try:
                 data = self.socket.recv(2048)
-                if not auth_ok:
-                    data = data.replace("\n","").replace("\r","") #remove ws
-                    #client has to authenticate
-                    match_result = self.auth_sock_re.search(data)
-                    if match_result:
-                        auth_info = [match_result.group(1), match_result.group(2)]
-                        auth_ok = self._auth_function(auth_info)
-                        if not auth_ok:
-                            self.socket.send("Access denied.")
-                            max_tries += 1
-                            if max_tries > 2:
-                                self._kick.set()
-                        else:
-                            self.socket.send("User %s authenticated successfuly.\n" % auth_info[0])
-                    else:
-                        self.socket.send("Bad authentication data format.")
-
+                data = data.replace("\n","").replace("\r","") #remove ws
+                if not self._authenticated:
+                    self._authenticate(data)
                     continue #don't handle auth data
 
                 #Auth is ok, handle user data
-                self.socket.send(self._handle_function(data))
+                self._handle_request(data)
             except socket.timeout, e:
                 pass
 
+        self.disconnect()
         self.logger.info("[-] Client on %s:%s disconnected." % (self.ip, self.port))
