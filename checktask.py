@@ -19,6 +19,7 @@ FIELDS_DICT = {
         "inf.announce" : ['entries'],
         "uth.announce" : ['entries'],
         "uth.food" : ['menu'],
+        "inf" : ['entries' ]
         }
 
 import sys
