@@ -117,6 +117,7 @@ class CourseTask(BaseTask):
 
             if 'title' not in entry:
                 entry_date_str = entry['date'].strftime('%2d/%2m/%4Y')
-                entry['title'] = '%s - %s' % (self.id.upper(), entry_date_str)
+                code_site = self._get_document_field(self.document, 'info.code_site')
+                entry['title'] = '%s - %s' % (code_site, entry_date_str)
 
         return entries
