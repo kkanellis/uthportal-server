@@ -3,7 +3,7 @@
 
 from uthportal.tasks.course import CourseTask
 
-from uthportal.library.inf.courses.ce232 import ce232
+from uthportal.library.inf.courses.ce232 import parse as parse_ce232
 
 class ce230(CourseTask):
     document_prototype = {
@@ -22,5 +22,5 @@ class ce230(CourseTask):
     }
 
     def parse_site(self, bsoup):
-        return ce232.parse_site(bsoup)
+        return parse_ce232(bsoup)
 
