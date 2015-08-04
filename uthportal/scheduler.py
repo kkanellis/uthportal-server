@@ -61,7 +61,8 @@ class Scheduler(object):
             self.logger.debug('Adding task "%s" [%s]' % (id, task_type))
 
             if not task_type in self.intervals:
-                self.logger.warning('Interval not defined for "%s" class. Skipping task ...' % task_type)
+                self.logger.info('Interval not defined for "%s" class. Assuming it is an once-time task' % task_type)
+                self.add_task(id, task)
                 continue
 
             self.add_task(id, task, self.intervals[task_type])
