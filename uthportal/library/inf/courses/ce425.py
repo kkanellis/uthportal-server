@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from uthportal.tasks.course import CourseTask
+from uthportal.util import parse_rss
 
 class ce425(CourseTask):
     document_prototype = {
@@ -18,3 +19,7 @@ class ce425(CourseTask):
             "link_eclass": "http://eclass.uth.gr/eclass/courses/MHX274/"
         }
     }
+
+    def parse_site(self, bsoup):
+        return parse_rss( unicode(bsoup) )
+
