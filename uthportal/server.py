@@ -17,7 +17,8 @@ DEFAULT_HIDDEN_FIELDS = [ '_id', 'auth_type' ]
 query_type = {
         'courses': 'code',
         'announce': 'type',
-        'food': 'city'
+        'food': 'city',
+        'inf': 'type'
 }
 
 app =  flask.Flask(__name__)
