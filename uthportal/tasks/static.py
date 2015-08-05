@@ -7,34 +7,18 @@ from uthportal.util import get_soup
 class StaticTask(BaseTask):
     task_type = 'StaticTask'
 
+    update_fields = ['entries']
+    db_query_format = { 'type': 'id' }
+
     def __init__(self, path, settings, database_manager, **kwargs):
         super(StaticTask, self).__init__(path, settings, database_manager)
 
-        self.update_fields = ['entries']
-        self.db_query = { 'type': self.id }
-
-        self.logger.debug('Loading document from database...')
-
-        self.document = self.load()
-        if not self.document:
-            if hasattr(self, 'document_prototype'):
-                self.logger.info('No document found in database. Using prototype')
-                self.document = self.document_prototype
-                self.save()
-            else:
-                self.logger.error('No document_prototype is available!')
-                return
-
-        self.logger.debug('id = {:<10} | collection = {:<35}'.format(self.id, self.db_collection))
-
-
     def parse(self, bsoup):
-        """Parse the fetced document"""
+        """ Parse the fetced document """
         return None
 
     def fetch(self):
         filepath = self.filedir + '/' + self.filename
-        print filepath
         try:
             with open(filepath, 'r') as f:
                 html = f.read().decode('utf8')

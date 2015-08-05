@@ -10,31 +10,17 @@ from uthportal.util import fix_urls, get_soup, parse_rss
 class CourseTask(BaseTask):
     task_type = 'CourseTask'
 
+    update_fields =[ 'announcements.site', 'announcements.eclass' ]
+    db_query_format = { 'code' : 'id' }
+
     def __init__(self, path, settings, database_manager):
         super(CourseTask, self).__init__(path, settings, database_manager)
 
-        self.update_fields =[ 'announcements.site', 'announcements.eclass' ]
-        self.db_query = { 'code' : self.id }
-
-        self.logger.debug('Loading document from database...')
-
-        self.document = self.load()
-        if not self.document:
-            if hasattr(self, 'document_prototype'):
-                self.logger.info('No document found in database. Using prototype')
-                self.document = self.document_prototype
-
-                # Calculate semester of course based on course code
-                year, _, spring = self.id[2:]
-                semester = (2 * int(year)) if int(spring) % 2 == 1 else (2 * int(year) - 1)
-                self._set_document_field(self.document, 'info.semester', semester)
-
-                self.save()
-            else:
-                self.logger.error('No document_prototype is available!')
-                return
-
-        self.logger.debug('id = {:<10} | collection = {:<35}'.format(self.id, self.db_collection))
+        # Calculate semester of course based on course code
+        year, _, spring = self.id[2:]
+        semester = (2 * int(year)) if int(spring) % 2 == 1 else (2 * int(year) - 1)
+        self._set_document_field(self.document, 'info.semester', semester)
+        self.save()
 
     def update(self):
         new_document_fields = {
@@ -71,7 +57,7 @@ class CourseTask(BaseTask):
             return None
 
         try:
-            entries = self.postprocess_site(entries, link)
+            entries = self.fix_site_entries(entries, link)
         except Exception as e:
             self.logger.error('post_process: %s', unicode(e))
             return None
@@ -98,14 +84,11 @@ class CourseTask(BaseTask):
 
         return entries
 
-
-    # This is commented out only for testing and shouldn't.
-    #@abstractmethod
     def parse_site(self, bsoup):
         """Parse the fetced document"""
         return None
 
-    def postprocess_site(self, entries, base_link):
+    def fix_site_entries(self, entries, base_link):
         """ Process the document before saving
             For each entry:
                 a) convert all relative links to absolute ones
@@ -121,3 +104,4 @@ class CourseTask(BaseTask):
                 entry['title'] = '%s - %s' % (code_site, entry_date_str)
 
         return entries
+

@@ -11,25 +11,11 @@ from uthportal.util import get_soup
 class AnnouncementTask(BaseTask):
     task_type = 'AnnouncementTask'
 
+    update_fields = ['entries']
+    db_query_format = { 'type': 'id' }
+
     def __init__(self, path, settings, database_manager, **kwargs):
         super(AnnouncementTask, self).__init__(path, settings, database_manager)
-
-        self.update_fields = ['entries']
-        self.db_query = { 'type': self.id }
-
-        self.logger.debug('Loading document from database...')
-
-        self.document = self.load()
-        if not self.document:
-            if hasattr(self, 'document_prototype'):
-                self.logger.info('No document found in database. Using prototype')
-                self.document = self.document_prototype
-                self.save()
-            else:
-                self.logger.error('No document_prototype is available!')
-                return
-
-        self.logger.debug('id = {:<10} | collection = {:<35}'.format(self.id, self.db_collection))
 
         # Check if task needs auth
         if 'auth_type' in self.document:

@@ -10,27 +10,14 @@ from uthportal.util import download_file
 
 class FoodmenuTask(BaseTask):
     task_type = 'FoodmenuTask'
+
+    update_fields = [ 'menu' ]
+    db_query_format = { 'city' : 'id' }
+
     weekdays = [ 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή' ]
 
     def __init__(self, path, settings, database_manager):
         super(FoodmenuTask, self).__init__(path, settings, database_manager)
-
-        self.update_fields = [ 'menu' ]
-        self.db_query = { 'city' : self.id }
-
-        self.logger.debug('Loading document from database...')
-
-        self.document = self.load()
-        if not self.document:
-            if hasattr(self, 'document_prototype'):
-                self.logger.info('No document found in database. Using prototype')
-                self.document = self.document_prototype
-                self.save()
-            else:
-                self.logger.error('No document_prototype is available!')
-                return
-
-        self.logger.debug('id = {:<10} | collection = {:<35}'.format(self.id, self.db_collection))
 
     def update(self):
         # Finding the date of the latest monday

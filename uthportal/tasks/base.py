@@ -1,3 +1,5 @@
+
+import sys
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 
@@ -24,6 +26,25 @@ class BaseTask(object):
 
         self.db_collection = '.'.join( path.split('.')[:-1] )
 
+        self.db_query = { }
+        for (key, value) in self.db_query_format.iteritems():
+            if not hasattr(self, value):
+                self.logger.error('Missing "%s" field defined in db_query_format' % value)
+                sys.exit(1)
+
+            self.db_query[key] = getattr(self, value)
+
+        # Load and update database document (if necessary)
+        self.document = self.load()
+        if not self.document:
+            if hasattr(self, 'document_prototype'):
+                self.logger.info('No document found in database. Using prototype')
+                self.document = self.document_prototype
+                self.save()
+            else:
+                self.logger.error('No document_prototype is available!')
+                return
+
     def __call__(self):
         """This is the method called from the Scheduler when this object is
         next in queue (and about to be executed) """
@@ -31,7 +52,9 @@ class BaseTask(object):
         if not hasattr(self, 'document') or not self.document:
             self.logger.error('Task has no document attribute or document is empty. Task stalled!')
         else:
+            self.load()
             self.update()
+
 
     def fetch(self, link, session=None, *args, **kwargs):
         """
@@ -125,7 +148,12 @@ class BaseTask(object):
         self.save()
         self.logger.debug('Task updated successfully!')
 
+        self.post_process()
+
     def notify(self):
+        pass
+
+    def post_process(self):
         pass
 
     """ Database related method """
