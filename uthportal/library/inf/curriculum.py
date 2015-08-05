@@ -47,3 +47,44 @@ class curriculum(StaticTask):
         return curriculum
 
 
+    def post_process(self):
+        """
+        Add the 'curriculum' field into 'info' key of every course in entries
+        """
+
+        entries = self._get_document_field(self.document, 'entries')
+
+        # Organize entries by course name
+        course_curriculum = { }
+        for entry in entries:
+            course_name = entry['course_name']
+            if course_name in course_curriculum:
+                course_curriculum[course_name].append(entry)
+            else:
+                course_curriculum[course_name] = [ entry ]
+
+        db_manager = self.database_manager
+        db_collection = 'inf.courses'
+
+        # Update each course's info
+        for course_name in course_curriculum:
+            curriculum = course_curriculum
+
+            db_query = { 'info.name': course_name }
+            document = db_manager.find_document(db_collection, db_query)
+
+            if not document:
+                self.logger.warning('No database entry found for course "%s"' % course_name)
+                continue
+
+            if 'curriculum' in document['info']:
+                self.logger.debug(
+                        'Overwritting previous curriculum: %s'
+                        % unicode( self._get_document_field(self.document, 'info.curriculum'))
+                        )
+
+            db_manager.update_document(db_collection, db_query, { '$set': { 'info.curriculum' : curriculum } })
+            self.logger.debug('Curriculum updated successfully for "%s"' % document['code'])
+
+
+
