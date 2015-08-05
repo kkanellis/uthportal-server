@@ -11,7 +11,7 @@ class ce151(CourseTask):
             'link_eclass': 'http://eclass.uth.gr/eclass/modules/announcements/rss.php?c=MHX211'
         },
         'info': {
-            'name': u'Φυσική ΙI',
+            'name': u'Φυσική ΙΙ',
             'code_site': u'HY151',
             'code_eclass': u'MHX211',
             'link_site': '',

@@ -12,7 +12,7 @@ class ce425(CourseTask):
             "link_eclass": "http://eclass.uth.gr/eclass/modules/announcements/rss.php?c=MHX274"
         },
         "info": {
-            "name": u"Πληροφορικά Συστήματα στον Παγκόσμιο Ιστό",
+            "name": u"Πληροφοριακά Συστήματα στον Παγκόσμιο Ιστό",
             "code_site": u"HY425",
             "code_eclass": u"MHX274",
             "link_site": "http://inf-server.inf.uth.gr/mavcourses/wis/",

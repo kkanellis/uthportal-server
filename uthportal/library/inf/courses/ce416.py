@@ -7,7 +7,7 @@ class ce416(CourseTask):
     document_prototype = {
         "code": "ce416",
         "announcements": {
-            "link_site": "http://inf-server.inf.uth.gr/courses/CE416/admin/news.html",
+            "link_site": "",#"http://inf-server.inf.uth.gr/courses/CE416/admin/news.html",
             "link_eclass": "http://eclass.uth.gr/eclass/modules/announcements/rss.php?c=MHX101"
         },
         "info": {

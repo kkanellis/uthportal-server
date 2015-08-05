@@ -12,7 +12,7 @@ class ce121(CourseTask):
             'link_eclass': ''
         },
         'info': {
-            'name': u'Προγραμματισμός II',
+            'name': u'Προγραμματισμός ΙΙ',
             'code_site': 'HY121',
             'code_eclass': '',
             'link_site': 'http://inf-server.inf.uth.gr/courses/CE121/',

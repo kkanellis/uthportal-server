@@ -11,7 +11,7 @@ class ce311(CourseTask):
             "link_eclass": "http://eclass.uth.gr/eclass/modules/announcements/rss.php?c=MHX295"
         },
         "info": {
-            "name": u"Εισαγωγή στη Θεωρία Υπολογισμού",
+            "name": u"Εισαγωγή στην Θεωρία Υπολογισμού",
             "code_site": u"HY311",
             "code_eclass": u"MHX295",
             "link_site": "",
