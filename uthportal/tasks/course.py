@@ -59,7 +59,7 @@ class CourseTask(BaseTask):
         try:
             entries = self.fix_site_entries(entries, link)
         except Exception as e:
-            self.logger.error('post_process: %s', unicode(e))
+            self.logger.error('fix_site_entries: %s', unicode(e))
             return None
 
         return entries
@@ -82,6 +82,12 @@ class CourseTask(BaseTask):
             self.logger.error('parse_rss: %s' % unicode(e))
             return None
 
+        try:
+            entries = self.fix_eclass_entries(entries)
+        except Exception as e:
+            self.logger.error('fix_eclass_entries: %s', unicode(e))
+            return None
+
         return entries
 
     def parse_site(self, bsoup):
@@ -92,16 +98,33 @@ class CourseTask(BaseTask):
         """ Process the document before saving
             For each entry:
                 a) convert all relative links to absolute ones
-                b) adds a title if no title is present
+                b) add a title if no title is present
         """
 
         for entry in entries:
             entry['html'] = fix_urls(entry['html'], base_link)
 
-            if 'title' not in entry:
+            if 'title' not in entry or not entry['title']:
                 entry_date_str = entry['date'].strftime('%2d/%2m/%4Y')
                 code_site = self._get_document_field(self.document, 'info.code_site')
                 entry['title'] = '%s - %s' % (code_site, entry_date_str)
+
+            if 'link' not in entry:
+                entry['link'] = self._get_document_field(self.document, 'announcements.link_site')
+
+        return entries
+
+    def fix_eclass_entries(self, entries):
+        """ Process the document before saving
+            For each entry:
+                a) add a title if no title is present
+        """
+
+        for entry in entries:
+            if 'title' not in entry or not entry['title']:
+                entry_date_str = entry['date'].strftime('%2d/%2m/%4Y')
+                code_eclass = self._get_document_field(self.document, 'info.code_eclass')
+                entry['title'] = '%s - %s' % (code_eclass, entry_date_str)
 
         return entries
 

@@ -11,7 +11,7 @@ class ce110(CourseTask):
             'link_eclass': 'http://eclass.uth.gr/eclass/modules/announcements/rss.php?c=MHX159'
         },
         'info': {
-            'name': u'Μαθηματικός Λογισμός Ι',
+            'name': u'Λογισμός Ι',
             'code_site': u'HY110',
             'code_eclass': u'MHX159',
             'link_site': '',
