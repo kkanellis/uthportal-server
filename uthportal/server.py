@@ -41,6 +41,9 @@ def not_implemented(error):
 def json_error(code, message):
     return flask.jsonify( {'error': {'code': code, 'message': message} } ), code
 
+def db_collection(collection):
+    return 'server.' + collection
+
 @app.route('/api/v1/info/<path:url>', methods=['GET'])
 def get_info(url):
     url_parts = url.split('/')
@@ -51,7 +54,6 @@ def get_info(url):
     exclude_param = request.args.get('exclude')
     exclude_fields = exclude_param.split(',') if exclude_param else [ ]
 
-    print exclude_fields
     document = None
     if url[-1] == '/': # List all children
         url_parts = url_parts[:-1] # Remove last empty entry
@@ -86,14 +88,14 @@ def get_document(collection, query, exclude_keys):
     """
     Return the first document that matches the query from the given collection
     """
-    document = app.config['db_manager'].find_document('server.' + collection, query=query)
+    document = app.config['db_manager'].find_document( db_collection(collection), query=query)
     return remove_keys(document, exclude_keys) if document else None
 
 def get_children(collection, exclude_keys):
     """
     Returns all the children that a collection contains
     """
-    documents = app.config['db_manager'].find_documents('server.' + collection)
+    documents = app.config['db_manager'].find_documents( db_collection(collection) )
     return [ remove_keys(document, exclude_keys) for document in documents if document ]
 
 def remove_keys(document, keys):
@@ -151,3 +153,4 @@ class Server(object):
     def __start_flask(self):
         server_settings = self.settings['server']
         app.run(host = server_settings['host'], port = server_settings['port'])
+
