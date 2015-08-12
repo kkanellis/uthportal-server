@@ -1,4 +1,5 @@
 import flask
+from flask import request
 from json import JSONEncoder
 
 from multiprocessing import Process
@@ -13,7 +14,7 @@ from util import BSONEncoderEx
 HTTPCODE_NOT_FOUND = 404
 HTTPCODE_NOT_IMPLEMENTED = 501
 
-DEFAULT_HIDDEN_FIELDS = [ '_id', 'auth_type' ]
+DEFAULT_EXCLUDED_FIELDS = [ '_id', 'auth_type' ]
 query_type = {
         'courses': 'code',
         'announce': 'type',
@@ -47,12 +48,16 @@ def get_info(url):
     if len(url_parts) <= 1: # Non-valid request
         flask.abort(HTTPCODE_NOT_FOUND)
 
+    exclude_param = request.args.get('exclude')
+    exclude_fields = exclude_param.split(',') if exclude_param else [ ]
+
+    print exclude_fields
     document = None
     if url[-1] == '/': # List all children
         url_parts = url_parts[:-1] # Remove last empty entry
         collection = '.'.join(url_parts)
 
-        children = get_children(collection)
+        children = get_children(collection, exclude_fields)
 
         document = None
         if children:
@@ -69,7 +74,7 @@ def get_info(url):
 
         if key in query_type:
             query = { query_type[key] : id }
-            document = get_document(collection, query)
+            document = get_document(collection, query, exclude_fields)
 
     if isinstance(document, dict):
         return flask.jsonify( document )
@@ -77,38 +82,29 @@ def get_info(url):
         flask.abort(HTTPCODE_NOT_FOUND)
 
 
-def get_document(collection, query, **kwargs):
+def get_document(collection, query, exclude_keys):
     """
     Return the first document that matches the query from the given collection
     """
-
     document = app.config['db_manager'].find_document('server.' + collection, query=query)
-    return remove_keys(document, **kwargs) if document else None
+    return remove_keys(document, exclude_keys) if document else None
 
-def get_children(collection, **kwargs):
+def get_children(collection, exclude_keys):
     """
     Returns all the children that a collection contains
     """
     documents = app.config['db_manager'].find_documents('server.' + collection)
+    return [ remove_keys(document, exclude_keys) for document in documents if document ]
 
-    children = [ ]
-    for document in documents:
-        if document:
-            children.append( remove_keys(document, **kwargs) )
-
-    return children
-
-def remove_keys(document, keys=None):
+def remove_keys(document, keys):
     """
     Remove keys from dictionary
     """
-
-    if keys is None:
-        keys = DEFAULT_HIDDEN_FIELDS
+    # Add the default excluded fields
+    keys = keys + DEFAULT_EXCLUDED_FIELDS
 
     for key in keys:
-        if key in document:
-            del document[key]
+        document.pop(key, None)
 
     return document
 
