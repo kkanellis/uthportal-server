@@ -1,15 +1,17 @@
+#!/usr/bin/env python2.7
+
 import flask
 from flask import request
 from json import JSONEncoder
-
-from multiprocessing import Process
 
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from operator import itemgetter
 
-from logger import get_logger
-from util import BSONEncoderEx
+from uthportal.database.mongo import MongoDatabaseManager
+from uthportal.configure import Configuration
+from uthportal.logger import get_logger
+from uthportal.util import BSONEncoderEx
 
 HTTPCODE_NOT_FOUND = 404
 HTTPCODE_NOT_IMPLEMENTED = 501
@@ -27,8 +29,13 @@ app =  flask.Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
 app.config['JSON_SORT_KEYS'] = True
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
+app.config['PROPAGATE_EXCEPTIONS'] = True
 
 app.json_encoder = BSONEncoderEx
+
+db_manager = None
+settings = None
+logger = None
 
 @app.errorhandler(HTTPCODE_NOT_FOUND)
 def page_not_found(error):
@@ -88,14 +95,14 @@ def get_document(collection, query, exclude_keys):
     """
     Return the first document that matches the query from the given collection
     """
-    document = app.config['db_manager'].find_document( db_collection(collection), query=query)
+    document = db_manager.find_document( db_collection(collection), query=query)
     return remove_keys(document, exclude_keys) if document else None
 
 def get_children(collection, exclude_keys):
     """
     Returns all the children that a collection contains
     """
-    documents = app.config['db_manager'].find_documents( db_collection(collection) )
+    documents = db_manager.find_documents( db_collection(collection) )
     return [ remove_keys(document, exclude_keys) for document in documents if document ]
 
 def remove_keys(document, keys):
@@ -110,47 +117,22 @@ def remove_keys(document, keys):
 
     return document
 
-class Server(object):
-    """
-    An object-oriented wrapper for the flask-server
-    """
 
-    def __init__(self, database_manager, settings):
-        self.settings = settings
-        self.logger = get_logger('server', self.settings)
-        self.__database_manager = database_manager
+def __start_flask(self):
+    server_settings = self.settings['server']
 
-        self.__process = None
-        self.__is_running = False
 
-        app.config['db_manager'] = database_manager
-        app.config['settings'] = settings
+def main():
+    global db_manager, settings, logger, app
+    settings = Configuration().get_settings()
+    logger = get_logger('server', settings)
 
-    def start(self):
-        if self.__is_running:
-            self.logger.error("Cannot start. Server is already running!!!")
-            return
+    logger.info('Connecting to database...')
+    db_manager = MongoDatabaseManager(settings)
+    db_manager.connect()
 
-        self.__is_running = True
-        self.__process = Process(target = self.__start_flask)
-        self.__process.start()
+    server_settings = settings['server']
+    app.run(host = server_settings['host'], port = server_settings['port'])
 
-        self.logger.info("Server started.")
-
-    def stop(self):
-        if not self.__is_running:
-            self.logger.error("Cannot stop. Server is not running!!!")
-            return
-
-        self.__process.terminate()
-        self.__is_running = False
-
-        self.logger.info("Server stopped.")
-
-    def is_running(self):
-        return self.__is_running
-
-    def __start_flask(self):
-        server_settings = self.settings['server']
-        app.run(host = server_settings['host'], port = server_settings['port'])
-
+if __name__ == '__main__':
+    main()
