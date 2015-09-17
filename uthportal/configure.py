@@ -47,6 +47,11 @@ class Configuration(object):
                     'AnnouncementTask': { 'minutes' : 30 }
                 }
             },
+            'socket_server': {
+                'host': '127.0.0.1',
+                'port': 11337,
+                'max_connections': 10
+            },
             'logger': {
                 'max_size': 10000000,
                 'logs_backup_count': 3,
@@ -55,7 +60,8 @@ class Configuration(object):
                     'mongo': 'INFO',
                     'scheduler': 'INFO',
                     'apscheduler': 'WARN',
-                    'uthportal': 'INFO'
+                    'uthportal': 'INFO',
+                    'socket_server': 'DEBUG'
                 }
             },
             'network': {
