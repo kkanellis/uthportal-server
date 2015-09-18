@@ -11,7 +11,6 @@ from uthportal.logger import get_logger
 from uthportal.database.mongo import MongoDatabaseManager
 #from uthportal.notifier import Notifier
 from uthportal.scheduler import Scheduler
-from uthportal.server import Server
 
 
 INFO = {
@@ -38,10 +37,6 @@ class UthPortal(object):
             sys.exit(1)
 
         self.load_tasks()
-
-        # TODO: This should be removed cause it will be independent
-        # Server will be run in different VM, so it will be autonomous
-        self.server = Server(self.db_manager, self.settings)
 
         self.scheduler = Scheduler(
                 self.tasks,
@@ -100,24 +95,10 @@ class UthPortal(object):
 
     def start(self):
         self._start_scheduler()
-        self._start_server()
 
     def stop(self):
         self.db_manager.disconnect()
-        self._stop_server()
         self._save_settings()
-
-    def restart(self):
-        self.stop_server()
-        self.start_server()
-
-    def _start_server(self):
-        self.db_manager.connect()
-        self.server.start()
-
-    def _stop_server(self):
-        if self.server.is_running :
-            self.server.stop()
 
     def _start_scheduler(self):
         self.logger.debug('Starting the scheduler')
