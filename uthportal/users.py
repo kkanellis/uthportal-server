@@ -19,8 +19,8 @@ class UserControl(object):
 
         self._sg = sendgrid.SendGridClient(username, password)
 
-    def uuid_exists(self, userid = None, token = None):
-        short_query =  { 'uuid' : userid}
+    def uuid_exists(self, userid=None, token=None):
+        short_query =  { 'uuid' : userid }
         token_exists = None
         if token:
             #Check for activation token
@@ -28,8 +28,8 @@ class UserControl(object):
             if not userid:
                 return token_exists
 
-        return (self.db_manager.find_document('users.pending', query = short_query)  != None) or \
-                (self.db_manager.find_document('users.active', query = short_query) != None)  or token_exists
+        return ( (self.db_manager.find_document('users.pending', query = short_query) is not None) or
+                (self.db_manager.find_document('users.active', query = short_query) is not None)  or token_exists)
 
     @staticmethod
     def generate_uuid() :
@@ -61,3 +61,4 @@ class UserControl(object):
             (userid, token) = self.generate_uuid()
 
         return (userid, token)
+
