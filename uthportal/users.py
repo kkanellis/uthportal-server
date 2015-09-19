@@ -15,7 +15,9 @@ class UserControl(object):
         email_settings = self.settings['auth']['email']
         username = email_settings['username']
         password = email_settings['password']
+
         self._email_from = settings['email']['from']
+        self._domain = settings['server']['domain']
 
         self._sg = sendgrid.SendGridClient(username, password)
 
@@ -44,16 +46,18 @@ class UserControl(object):
         message = sendgrid.Mail()
         message.add_to(address)
         message.set_subject('Test')
+        #TODO: make some proper html
         message.set_html(
             "Please click on the following link to activate your account:\
-            {0}, \
-            This is your 8-digit unique user id: {1}\
+            <a href={0}/api/v1/activate?email={1}&token={2}>Activate</a>, \
+            This is your 8-digit unique user id: {3}\
             Use this in your app, when asked for it.\
             This id is used to personalize your push notifications.\
-            Please don't share this ID as it is supposed to be kept secret.".format(token, userid))
+            Please don't share this ID as it is supposed to be kept secret."\
+            .format(self._domain, address, token, userid))
         message.set_text('Token: {0}, 8-digit: {1}'.format(token, userid))
         message.set_from('UthPortal <%s>' % self._email_from)
-        return (205,"a") #self._sg.send(message)
+        return self._sg.send(message)
 
     def generate_and_check(self):
         (userid, token) = self.generate_uuid()

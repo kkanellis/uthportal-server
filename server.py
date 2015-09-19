@@ -7,7 +7,6 @@ import re
 
 import flask
 import sendgrid
-from flask import request
 from bs4 import BeautifulSoup
 
 from uthportal.database.mongo import MongoDatabaseManager
@@ -58,10 +57,40 @@ def json_error(code, message):
 def db_collection(collection):
     return 'server.' + collection
 
+@app.route('/api/v1/activate', methods=['GET'])
+def activate():
+    global db_manager, logger, settings, user_control
+    token = flask.request.args.get('token')
+    email = flask.request.args.get('email')
+    if token is None or email is None:
+        return 'No token or email provided', HTTPCODE_BAD_REQUEST
+
+    logger.info('User trying to activate with email: {0}, and token: {1}'.format(
+        email, token)
+    )
+
+    user = db_manager.find_document('users.pending', {'email' : email})
+    if user is None:
+        return 'No pending user with this email', HTTPCODE_BAD_REQUEST
+
+    if user['token'] == token:
+        #Correct token for this email address
+        db_manager.update_document('users.pending', {'_id': user['_id']},
+            {'$unset':{'token': 1, 'tries': 1}}
+        )
+        #get sanitized document
+        user = db_manager.find_document('users.pending', {'_id': user['_id']})
+        db_manager.insert_document('users.active', user)
+        db_manager.remove_document('users.pending', {'_id': user['_id']})
+        logger.info('User activated successfully :%s' % email)
+        return 'User activated successfully', 200
+    else:
+        return 'Bad token.', HTTPCODE_BAD_REQUEST
+
 @app.route('/api/v1/register', methods=['POST'])
 def register():
-    global db_manager, logger, settings
-    email = request.args.get('email')
+    global db_manager, logger, settings, user_control
+    email = flask.request.args.get('email')
     if email == None:
         return json_error(HTTPCODE_BAD_REQUEST, 'No email address')
     logger.info('User trying to register with email: ' + email)
@@ -91,10 +120,12 @@ def register():
                 #email sent, register this user as pending
                 db_manager.insert_document('users.pending',
                 { 'email' : email, 'userid': userid, 'token': token, 'tries': 1 })
-                return flask.jsonify( {'message' : "Confirmation email with activation link sent."} )
+                logger.info("User: %s, registered successfully." % email)
+                return flask.jsonify( {'message' : "Confirmation email with activation link sent."})
             else:
+                logger.error("[SendGrid] -> %s" % msg)
                 #email service returned an error
-                json_error(HTTPCODE_SERVICE_UNAVAILABLE, 'Email service unavailable')
+                return json_error(HTTPCODE_SERVICE_UNAVAILABLE, 'Email service unavailable')
         else:
             #there is already a pending user
             tries = user['tries']
@@ -109,9 +140,15 @@ def register():
                 (status, msg) = user_control.send_activation_email(email, userid, token)
                 logger.debug('SendGrid response: [{0}] -> {1}'.format(status, msg))
                 #increment n of tries
-                db_manager.update_document('users.pending',{'_id': user['_id']},
-                    {'$inc' :{'tries' : 1}})
-                return flask.jsonify( {'message' : "Confirmation email with activation link sent."} )
+                if int(status) < 400 :
+                    db_manager.update_document('users.pending',{'_id': user['_id']},
+                        {'$inc' :{'tries' : 1}})
+                    logger.info("Activation mail re-sent to user: %s" % email)
+                    return flask.jsonify( {'message' : "Confirmation email with activation link sent."} )
+                else:
+                    logger.error("[SendGrid] -> %s" % msg)
+                    #email service returned an error
+                    return json_error(HTTPCODE_SERVICE_UNAVAILABLE, 'Email service unavailable')
             else:
                 return json_error(HTTPCODE_TOO_MANY_REQUESTS, 'Max code resend tries exceeded.')
     else:
@@ -127,7 +164,7 @@ def get_info(url):
     if len(url_parts) <= 1: # Non-valid request
         flask.abort(HTTPCODE_NOT_FOUND)
 
-    exclude_param = request.args.get('exclude')
+    exclude_param = flask.request.args.get('exclude')
     exclude_fields = exclude_param.split(',') if exclude_param else [ ]
 
     document = None
@@ -185,11 +222,6 @@ def remove_keys(document, keys):
         document.pop(key, None)
 
     return document
-
-
-def __start_flask(self):
-    server_settings = self.settings['server']
-
 
 def main():
     global db_manager, settings, logger, app, user_control

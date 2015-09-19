@@ -38,6 +38,7 @@ class Configuration(object):
                 'port': 5001
             },
             'server' : {
+                'domain': 'localhost',
                 'host' : 'localhost',
                 'port' : 5000,
             },
