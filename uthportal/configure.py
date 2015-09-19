@@ -18,6 +18,11 @@ class Configuration(object):
                 'inf-site': {
                     'username': '',
                     'password': ''
+                },
+                'email': {
+                    'username' : 'username',
+                    'password': 'password',
+                    'from': 'uthportal@gmail.com'
                 }
             },
             'database': {

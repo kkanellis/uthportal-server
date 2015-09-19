@@ -34,6 +34,14 @@ class BSONEncoderEx(JSONEncoder):
             return JSONEncoder.default(self, obj, **kwargs)
 
 
+def get_first_n_digits(integer, digits):
+    import math
+    digits -= 1
+    while int(math.log10(abs(integer))) >  digits:
+        integer /= 10
+
+    return int(integer)
+
 def truncate_str(data, length):
     length -= 2
     return (data[:length] + '...') if len(data) > length else data
