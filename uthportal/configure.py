@@ -22,8 +22,11 @@ class Configuration(object):
                 'email': {
                     'username' : 'username',
                     'password': 'password',
-                    'from': 'uthportal@gmail.com'
                 }
+            },
+            'email': {
+                'from': 'uthportal@gmail.com',
+                'max_tries': 5
             },
             'database': {
                 'host': 'localhost',

@@ -99,7 +99,7 @@ def register():
             #there is already a pending user
             tries = user['tries']
             logger.info('[{0}][PENDING] resend requested, tries: {1}'.format(email, tries))
-            if (tries < 5):
+            if (tries < settings['email']['max_tries']):
                 try:
                     userid = user['userid']
                     token = user['token']
@@ -108,6 +108,7 @@ def register():
                     return json_error(HTTPCODE_SERVICE_UNAVAILABLE, 'Service unavailable')
                 (status, msg) = user_control.send_activation_email(email, userid, token)
                 logger.debug('SendGrid response: [{0}] -> {1}'.format(status, msg))
+                #increment n of tries
                 db_manager.update_document('users.pending',{'_id': user['_id']},
                     {'$inc' :{'tries' : 1}})
                 return flask.jsonify( {'message' : "Confirmation email with activation link sent."} )
@@ -199,9 +200,9 @@ def main():
     db_manager = MongoDatabaseManager(settings)
     db_manager.connect()
 
-    server_settings = settings['server']
-
     user_control = UserControl(settings, db_manager)
+
+    server_settings = settings['server']
     app.run(host = server_settings['host'], port = server_settings['port'])
 
 if __name__ == '__main__':

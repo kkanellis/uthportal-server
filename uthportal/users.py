@@ -15,7 +15,7 @@ class UserControl(object):
         email_settings = self.settings['auth']['email']
         username = email_settings['username']
         password = email_settings['password']
-        self._email_from = email_settings['from']
+        self._email_from = settings['email']['from']
 
         self._sg = sendgrid.SendGridClient(username, password)
 
@@ -61,4 +61,3 @@ class UserControl(object):
             (userid, token) = self.generate_uuid()
 
         return (userid, token)
-

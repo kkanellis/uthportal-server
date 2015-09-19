@@ -16,7 +16,7 @@ def _get_level(name, settings_level):
     else:
         return level_dict[settings_level['default']]
 
-def get_logger(name, settings, show_in_terminal = True, override_file_level = False):
+def get_logger(name, settings, show_in_terminal=True, override_file_level=False):
     """Creates a custom logger with date and time"""
     folder = settings['log_dir']
 
