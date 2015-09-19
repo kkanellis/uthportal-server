@@ -44,7 +44,13 @@ class UserControl(object):
         message = sendgrid.Mail()
         message.add_to(address)
         message.set_subject('Test')
-        message.set_html('Token: {0}, 8-digit: {1}'.format(token, userid))
+        message.set_html(
+            "Please click on the following link to activate your account:\
+            {0}, \
+            This is your 8-digit unique user id: {1}\
+            Use this in your app, when asked for it.\
+            This id is used to personalize your push notifications.\
+            Please don't share this ID as it is supposed to be kept secret.".format(token, userid))
         message.set_text('Token: {0}, 8-digit: {1}'.format(token, userid))
         message.set_from('UthPortal <%s>' % self._email_from)
         return (205,"a") #self._sg.send(message)

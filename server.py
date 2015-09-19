@@ -98,17 +98,18 @@ def register():
         else:
             #there is already a pending user
             tries = user['tries']
-            logger.info('[{0}][PENDING] resend requested, tries{1}'.format(email, tries))
+            logger.info('[{0}][PENDING] resend requested, tries: {1}'.format(email, tries))
             if (tries < 5):
                 try:
                     userid = user['userid']
                     token = user['token']
                 except KeyError as key_error:
                     logger.error('KeyError: %s' % key_error)
-                    json_error(HTTPCODE_SERVICE_UNAVAILABLE, 'Service unavailable')
+                    return json_error(HTTPCODE_SERVICE_UNAVAILABLE, 'Service unavailable')
                 (status, msg) = user_control.send_activation_email(email, userid, token)
                 logger.debug('SendGrid response: [{0}] -> {1}'.format(status, msg))
-                user['tries'] = tries + 1
+                db_manager.update_document('users.pending',{'_id': user['_id']},
+                    {'$inc' :{'tries' : 1}})
                 return flask.jsonify( {'message' : "Confirmation email with activation link sent."} )
             else:
                 return json_error(HTTPCODE_TOO_MANY_REQUESTS, 'Max code resend tries exceeded.')
