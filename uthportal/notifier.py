@@ -15,7 +15,8 @@ api = {
     'user.info':              ('/subscribers/(pushd_id}', 'GET'),
     'user.subscribe':         ('/subscriber/{pushd_id}/subscriptions/{event_id}', 'POST'),
     'user.unsubscribe':       ('/subscriber/{pushd_id}/subscriptions/{event_id}', 'DELETE'),
-    'user.subscriptions':     ('/subscriber/{pushd_id}/subscriptions', 'GET')
+    'user.get_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'GET'),
+    'user.set_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'POST')
 }
 
 logger = None
@@ -30,8 +31,8 @@ class PushdWrapper(object):
 
         logger = get_logger('notifier', settings)
 
-        self.users = PushdUsers(settings, db_manager)
-        self.events = PushdEvents(settings, db_manager)
+        self.users = PushdUsers(db_manager)
+        self.events = PushdEvents(db_manager)
 
         # Prepend pushd host:port in api urls
         base_url = '%s:%s' % (settings['notifier']['host'], settings['notifier']['port'])
@@ -49,7 +50,7 @@ class PushdWrapper(object):
 
 
 class PushdUsers(object):
-    def __init__(self, settings, db_manager):
+    def __init__(self, db_manager):
         self.settings = settings
         self.db_manager = db_manager
 
@@ -277,7 +278,7 @@ class PushdUser(object):
 
         return False
 
-    def subscriptions(self):
+    def get_subscriptions(self):
         """
         Returns a list with user subscriptions
         """
@@ -285,7 +286,7 @@ class PushdUser(object):
         if self.pushd_id:
             return None
 
-        (url, method) = api['user.subscriptions']
+        (url, method) = api['user.get_subscriptions']
         url = url.format( {
             'pushd_id': self.pushd_id,
         })
@@ -305,9 +306,11 @@ class PushdUser(object):
 
         return None
 
+    def set_subscriptions(self, events):
+        pass
 
 class PushdEvents(object):
-    def __init__(self, settings):
+    def __init__(self, db_manager):
         pass
 
     def __getitem__(self, key):
