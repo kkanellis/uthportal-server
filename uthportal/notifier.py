@@ -8,7 +8,7 @@ import requests
 from logger import get_logger
 
 api = {
-    'pushd.is_alive':         ('/status', 'GET'),
+    'is_alive':               ('/status', 'GET'),
     'users.register' :        ('/subscribers', 'POST'),
     'users.unregister':       ('/subscribers/{pushd_id}', 'DELETE'),
     'users.update':           ('/subscribers/{pushd_id}', 'POST'),
@@ -43,7 +43,7 @@ class PushdWrapper(object):
         """
         Returns True if pushd is online and working properly
         """
-        (url, method) = api['pushd.is_alive']
+        (url, method) = api['is_alive']
         response = http_request(url, method)
 
         return True if response.status_code == 204 else False
@@ -63,7 +63,7 @@ class PushdUsers(object):
             logger.error('User "%s" not found in database' % email)
             return PushdUser(None)
 
-    def register(self, protocol, token, lang='el-gr', **kwargs):
+    def register(self, protocol, token, lang='gr', **kwargs):
         """
         Register a new user in pushd
 
@@ -96,7 +96,8 @@ class PushdUsers(object):
         elif response.status_code == 201:
             logger.debug('User successfull registered [id=%s]')
             return content['id']
-        elif response.status_code == 400:
+
+        if response.status_code == 400:
             logger.error('register: Invalid specified token/protocol')
         else:
             logger.error('Request returned [%s]' % response.status_code)
@@ -109,7 +110,7 @@ class PushdUsers(object):
         """
         pass
 
-    def update(self, email, lang='el-gr', **kwargs):
+    def update(self, email, lang='gr', **kwargs):
         """
         Pings/updates the user to pushd
 
@@ -122,7 +123,9 @@ class PushdUsers(object):
             return False
 
         (url, method) = api['users.update']
-        url = url.format( {'pushd_id': pushd_id} )
+        url = url.format({
+            'pushd_id': pushd_id
+        })
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
@@ -161,7 +164,8 @@ class PushdUsers(object):
         if response.status_code == 204:
             logger.debug('User unregistered successfully')
             return True
-        elif response.status_code == 400:
+
+        if response.status_code == 400:
             logger.error('Invalid pushd_id format [id=%s]' % pushd_id)
         elif response.status_code == 404:
             logger.error('User not found [id=%s]' % pushd_id)
@@ -179,7 +183,7 @@ class PushdUsers(object):
             return None
 
         if 'pushd_id' not in document:
-            logger.error('Pushd_id not found for "%s"' % email)
+            logger.error('pushd_id not found in "%s" document' % email)
             return None
 
         return document['pushd_id']
@@ -197,7 +201,9 @@ class PushdUser(object):
             return None
 
         (url, method) = api['user.info']
-        url = url.format( {'pushd_id': self.pushd_id} )
+        url = url.format({
+            'pushd_id': self.pushd_id
+        })
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
@@ -224,13 +230,12 @@ class PushdUser(object):
             return None
 
         (url, method) = api['user.subscribe']
-        url = url.format( {
+        url = url.format({
             'pushd_id': self.pushd_id,
             'event_id': event_id
         })
 
-        payload = { }
-        payload.update(kwargs)
+        payload = kwargs
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method, params=payload)
