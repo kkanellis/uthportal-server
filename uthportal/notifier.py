@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
+
 import requests
 
 from logger import get_logger
@@ -10,9 +12,10 @@ api = {
     'users.register' :        ('/subscribers', 'POST'),
     'users.unregister':       ('/subscribers/{pushd_id}', 'DELETE'),
     'users.update':           ('/subscribers/{pushd_id}', 'POST'),
+    'user.info':              ('/subscribers/(pushd_id}', 'GET'),
     'user.subscribe':         ('/subscriber/{pushd_id}/subscriptions/{event_id}', 'POST'),
     'user.unsubscribe':       ('/subscriber/{pushd_id}/subscriptions/{event_id}', 'DELETE'),
-    'user.get_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'GET')
+    'user.subscriptions':     ('/subscriber/{pushd_id}/subscriptions', 'GET')
 }
 
 logger = None
@@ -39,7 +42,7 @@ class PushdWrapper(object):
         """
         Returns True if pushd is online and working properly
         """
-        (url, method) = api['pushd.status']
+        (url, method) = api['pushd.is_alive']
         response = http_request(url, method)
 
         return True if response.status_code == 204 else False
@@ -54,10 +57,10 @@ class PushdUsers(object):
         pushd_id = self._get_pushd_id(email)
 
         if pushd_id:
-            return PushdUser(self.settings, self.db_manager, pushd_id)
+            return PushdUser(pushd_id)
         else:
             logger.error('User "%s" not found in database' % email)
-            return None
+            return PushdUser(None)
 
     def register(self, protocol, token, lang='el-gr', **kwargs):
         """
@@ -83,7 +86,7 @@ class PushdUsers(object):
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method, params=payload)
 
-        content = response.json()
+        content = json.loads( response.json() )
 
         # 200 & 201 status codes are considered valid responses
         if response.status_code == 200:
@@ -98,6 +101,12 @@ class PushdUsers(object):
             logger.error('Request returned [%s]' % response.status_code)
 
         return None
+
+    def exists(self, email):
+        """
+        Returns True if user is currently registered
+        """
+        pass
 
     def update(self, email, lang='el-gr', **kwargs):
         """
@@ -175,17 +184,127 @@ class PushdUsers(object):
         return document['pushd_id']
 
 class PushdUser(object):
-    def __init__(self, settings, db_manager, pushd_id):
-        pass
+    def __init__(self, pushd_id):
+        self.pushd_id = push_id
 
-    def subscribe(self):
-        pass
+    def info(self):
+        """
+        Returns info about the user
+        """
+
+        if not self.pushd_id:
+            return None
+
+        (url, method) = api['user.info']
+        url = url.format( {'pushd_id': self.pushd_id} )
+
+        logger.debug('Making %s request @%s', method, url)
+        response = http_request(url, method)
+
+        if response.status_code == 200:
+            logger.debug('User exists! Returning info')
+            return json.loads( response.json() )
+
+        if response.status_code == 400:
+            logger.error('Invalid pushd_id format')
+        elif response.status_code == 404:
+            logger.error('User [id=%s] does not exist' % self.pushd_id)
+        else:
+            logger.error('Request returned [%s]' % response.status_code)
+
+        return None
+
+    def subscribe(self, event_id, **kwargs):
+        """
+        Subscribes the user to a notification event
+        """
+
+        if not self.pushd_id:
+            return None
+
+        (url, method) = api['user.subscribe']
+        url = url.format( {
+            'pushd_id': self.pushd_id,
+            'event_id': event_id
+        })
+
+        payload = { }
+        payload.update(kwargs)
+
+        logger.debug('Making %s request @%s', method, url)
+        response = http_request(url, method, params=payload)
+
+        if response.status_code == 201 or response.status_code == 204:
+            logger.debug('Subscribed to "%s" successfully' % event_id)
+            return True
+
+        if response.status_code == 400:
+            logger.error('Invalid pushd_id/event_id format')
+        elif response.status_code == 404:
+            logger.error('User [id=%s] does not exist' % self.pushd_id)
+        else:
+            logger.error('Request returned [%s]' % response.status_code)
+
+        return False
 
     def unsubscribe(self):
-        pass
+        """
+        Unsubscribes the user from a notification event
+        """
 
-    def get_subscriptions(self):
-        pass
+        if self.pushd_id:
+            return None
+
+        (url, method) = api['user.unsubscribe']
+        url = url.format( {
+            'pushd_id': self.pushd_id,
+            'event_id': event_id
+        })
+
+        logger.debug('Making %s request @%s', method, url)
+        response = http_request(url, method)
+
+        if response.status_code == 204:
+            logger.debug('Unsubscribed from "%s" successfully' % event_id)
+            return True
+
+        if response.status_code == 400:
+            logger.error('Invalid pushd_id/event_id format')
+        elif response.status_code == 404:
+            logger.error('User [id=%s] does not exist' % self.pushd_id)
+        else:
+            logger.error('Request returned [%s]' % response.status_code)
+
+        return False
+
+    def subscriptions(self):
+        """
+        Returns a list with user subscriptions
+        """
+
+        if self.pushd_id:
+            return None
+
+        (url, method) = api['user.subscriptions']
+        url = url.format( {
+            'pushd_id': self.pushd_id,
+        })
+
+        logger.debug('Making %s request @%s', method, url)
+        response = http_request(url, method)
+
+        if response.status_code == 200:
+            logger.debug('Recieved subscriptions for "%s"' % self.pushd_id)
+            events_dict = json.loads( response.json() )
+            return [ event_id for (event_id, _) in events_dict.iteritems() ]
+
+        if response.status_code == 404:
+            logger.error('User [id=%s] does not exist' % self.pushd_id)
+        else:
+            logger.error('Request returned [%s]' % response.status_code)
+
+        return None
+
 
 class PushdEvents(object):
     def __init__(self, settings):
