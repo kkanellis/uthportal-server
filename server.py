@@ -57,9 +57,10 @@ def json_error(code, message):
 def db_collection(collection):
     return 'server.' + collection
 
-@app.route('/api/v1/activate', methods=['GET'])
+@app.route('/api/v1/users/activate', methods=['GET'])
 def activate():
     global db_manager, logger, settings, user_control
+
     token = flask.request.args.get('token')
     email = flask.request.args.get('email')
     if token is None or email is None:
@@ -75,24 +76,30 @@ def activate():
 
     if user['token'] == token:
         #Correct token for this email address
-        db_manager.update_document('users.pending', {'_id': user['_id']},
-            {'$unset':{'token': 1, 'tries': 1}}
+        db_manager.update_document(
+                'users.pending',
+                {'_id': user['_id']},
+                {'$unset': {'token': 1, 'tries': 1 }}
         )
+
         #get sanitized document
         user = db_manager.find_document('users.pending', {'_id': user['_id']})
         db_manager.insert_document('users.active', user)
         db_manager.remove_document('users.pending', {'_id': user['_id']})
+
         logger.info('User activated successfully :%s' % email)
         return 'User activated successfully', 200
     else:
         return 'Bad token.', HTTPCODE_BAD_REQUEST
 
-@app.route('/api/v1/register', methods=['POST'])
+@app.route('/api/v1/users/register', methods=['POST'])
 def register():
     global db_manager, logger, settings, user_control
+
     email = flask.request.args.get('email')
     if email == None:
         return json_error(HTTPCODE_BAD_REQUEST, 'No email address')
+
     logger.info('User trying to register with email: ' + email)
     match = re.match(r'[^@]+@([^@]+\.[^@]+)', email)
 
@@ -112,6 +119,7 @@ def register():
             #no pending user found. We have a valid application
             (userid, token) = user_control.generate_and_check()
             logger.debug('[{0}] -> generated userid:{1}, token {2}'.format(email, userid, token))
+
             #Send activation email
             (status, msg) = user_control.send_activation_email(email, userid, token)
             logger.debug('SendGrid response: [{0}] -> {1}'.format(status, msg))
@@ -137,6 +145,7 @@ def register():
                 except KeyError as key_error:
                     logger.error('KeyError: %s' % key_error)
                     return json_error(HTTPCODE_SERVICE_UNAVAILABLE, 'Service unavailable')
+
                 (status, msg) = user_control.send_activation_email(email, userid, token)
                 logger.debug('SendGrid response: [{0}] -> {1}'.format(status, msg))
                 #increment n of tries
