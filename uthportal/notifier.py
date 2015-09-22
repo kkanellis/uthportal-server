@@ -13,10 +13,12 @@ api = {
     'users.unregister':       ('/subscribers/{pushd_id}', 'DELETE'),
     'users.update':           ('/subscribers/{pushd_id}', 'POST'),
     'user.info':              ('/subscribers/(pushd_id}', 'GET'),
-    'user.subscribe':         ('/subscriber/{pushd_id}/subscriptions/{event_id}', 'POST'),
-    'user.unsubscribe':       ('/subscriber/{pushd_id}/subscriptions/{event_id}', 'DELETE'),
+    'user.subscribe':         ('/subscriber/{pushd_id}/subscriptions/{event_name}', 'POST'),
+    'user.unsubscribe':       ('/subscriber/{pushd_id}/subscriptions/{event_name}', 'DELETE'),
     'user.get_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'GET'),
-    'user.set_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'POST')
+    'user.set_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'POST'),
+    'event.delete':           ('/event/{event_name}', 'DELETE'),
+    'event.statistics':       ('/event/{event_name}', 'GET')
 }
 
 logger = None
@@ -221,7 +223,7 @@ class PushdUser(object):
 
         return None
 
-    def subscribe(self, event_id, **kwargs):
+    def subscribe(self, event_name, **kwargs):
         """
         Subscribes the user to a notification event
         """
@@ -232,7 +234,7 @@ class PushdUser(object):
         (url, method) = api['user.subscribe']
         url = url.format({
             'pushd_id': self.pushd_id,
-            'event_id': event_id
+            'event_name': event_name
         })
 
         payload = kwargs
@@ -241,11 +243,11 @@ class PushdUser(object):
         response = http_request(url, method, params=payload)
 
         if response.status_code == 201 or response.status_code == 204:
-            logger.debug('Subscribed to "%s" successfully' % event_id)
+            logger.debug('Subscribed to "%s" successfully' % event_name)
             return True
 
         if response.status_code == 400:
-            logger.error('Invalid pushd_id/event_id format')
+            logger.error('Invalid pushd_id/event_name format')
         elif response.status_code == 404:
             logger.error('User [id=%s] does not exist' % self.pushd_id)
         else:
@@ -264,18 +266,18 @@ class PushdUser(object):
         (url, method) = api['user.unsubscribe']
         url = url.format( {
             'pushd_id': self.pushd_id,
-            'event_id': event_id
+            'event_name': event_name
         })
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
         if response.status_code == 204:
-            logger.debug('Unsubscribed from "%s" successfully' % event_id)
+            logger.debug('Unsubscribed from "%s" successfully' % event_name)
             return True
 
         if response.status_code == 400:
-            logger.error('Invalid pushd_id/event_id format')
+            logger.error('Invalid pushd_id/event_name format')
         elif response.status_code == 404:
             logger.error('User [id=%s] does not exist' % self.pushd_id)
         else:
@@ -302,7 +304,7 @@ class PushdUser(object):
         if response.status_code == 200:
             logger.debug('Recieved subscriptions for "%s"' % self.pushd_id)
             events_dict = json.loads( response.json() )
-            return [ event_id for (event_id, _) in events_dict.iteritems() ]
+            return [ event_name for (event_name, _) in events_dict.iteritems() ]
 
         if response.status_code == 404:
             logger.error('User [id=%s] does not exist' % self.pushd_id)
@@ -315,20 +317,96 @@ class PushdUser(object):
         pass
 
 class PushdEvents(object):
-    def __init__(self, db_manager):
-        pass
+    def __init__(self, event_templates):
+        self.templates = event_templates
 
-    def __getitem__(self, key):
-        pass
+    def __getitem__(self, event_name):
+        collection = self.__get_collection(event_name)
 
-    def add(self):
-        pass
+        if collection in self.templates:
+            template = self.templates[collection]
 
-    def delete(self):
-        pass
+            if ('title' not in template or
+                    'msg' not in template):
+                logger.error(' "title" and/or "msg" are missing from "%s" template' % collection)
+                return PushdEvent(None, None)
 
-    def get_statistics(self):
-        pass
+            return PushdEvent(event_name, template)
+        else:
+            logger.error('["%s"] No valid template found' % event_name)
+            return PushdEvent(None, None)
+
+    def delete(self, event_name):
+        (url, method) = api['events.delete']
+        url = url.format( {'event_name': event_name })
+
+        logger.debug('Making %s request @%s', method, url)
+        response = http_request(url, method)
+
+        if response.status_code == 204:
+            logger.debug('Event [%s] successfully deleted' % event_name)
+            return True
+        elif response.status_code == 404:
+            logger.warning('Event [%s] does not exist' % event_name)
+        else:
+            logger.error('Request returned [%s]' % response.status_code)
+
+        return False
+
+    def template_exist(self, event_name):
+        return True if self.__get_collection[event_name] in self.templates else False
+
+    def __get_collection(self, fullpath):
+        dot_parts = fullpath.split('.')
+        return '.'.join(dot_parts[::-1])
+
+class PushdEvent(object):
+    def __init__(self, event_name, template):
+        self.name = name
+        self.template = template
+
+    def statistics(self):
+        if not self.name:
+            return None
+
+        (url, method) = api['user.statistics']
+        url = url.format( {'event_name': self.name} )
+
+        logger.debug('Making %s request @%s', method, url)
+        response = http_request(url, method)
+
+        if response.status_code == 200:
+            logger.debug('Statistics returned')
+            return json.loads( response.json() )
+
+        if response.status_code == 404:
+            logger.warning('Event [%s] does not exist' % event_name)
+        else:
+            logger.error('Request returned [%s]' % response.status_code)
+
+        return None
+
+    def send(self, data=None, var=None):
+        if not self.name:
+            return None
+
+        if not data or not var:
+            logger.error('Empty data and/or var dicts')
+            return False
+
+        (url, method) = api['user.send']
+        url = url.format( {'event_name': self.name})
+
+        response = http_request(url, method)
+
+        if response.status_code == 204:
+            # We can't be sure push notifications are delivered
+            # 204 means only that pushd will handle the request
+            logger.debug('Event will be send')
+            return True
+        else:
+            logger.error('Request returned [%s]' % response.status_code)
+            return False
 
 
 def http_request(url, method, *args, **kwargs):
