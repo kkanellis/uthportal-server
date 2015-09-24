@@ -71,7 +71,7 @@ class PushdUsers(object):
 
         Return value is 'pushd_id' which must be saved in each user document
         """
-        if protocol not in ['gcm', 'mpns', 'wns']:
+        if protocol not in ['gcm', 'wns-toast']:
             logger.error('register: unsupported protocol "%s"' % protocol)
             return None
 
@@ -88,6 +88,9 @@ class PushdUsers(object):
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method, params=payload)
+
+	if not response:
+	    return None
 
         content = json.loads( response.json() )
 
@@ -132,6 +135,9 @@ class PushdUsers(object):
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
+	if not response:
+	    return False
+
         if response.status_code == 204:
             logger.debug('User info edited successfully')
             return True
@@ -162,6 +168,9 @@ class PushdUsers(object):
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
+
+	if not response:
+	    return False
 
         if response.status_code == 204:
             logger.debug('User unregistered successfully')
@@ -210,6 +219,9 @@ class PushdUser(object):
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
+        if not response:
+	    return None
+
         if response.status_code == 200:
             logger.debug('User exists! Returning info')
             return json.loads( response.json() )
@@ -229,7 +241,7 @@ class PushdUser(object):
         """
 
         if not self.pushd_id:
-            return None
+            return False
 
         (url, method) = api['user.subscribe']
         url = url.format({
@@ -241,6 +253,9 @@ class PushdUser(object):
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method, params=payload)
+
+        if not response:
+            return False
 
         if response.status_code == 201 or response.status_code == 204:
             logger.debug('Subscribed to "%s" successfully' % event_name)
@@ -261,7 +276,7 @@ class PushdUser(object):
         """
 
         if self.pushd_id:
-            return None
+            return False
 
         (url, method) = api['user.unsubscribe']
         url = url.format( {
@@ -271,6 +286,9 @@ class PushdUser(object):
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
+
+        if not response:
+            return False
 
         if response.status_code == 204:
             logger.debug('Unsubscribed from "%s" successfully' % event_name)
@@ -300,6 +318,9 @@ class PushdUser(object):
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
+
+        if not response:
+            return None
 
         if response.status_code == 200:
             logger.debug('Recieved subscriptions for "%s"' % self.pushd_id)
@@ -343,6 +364,9 @@ class PushdEvents(object):
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
+        if not response:
+            return False
+
         if response.status_code == 204:
             logger.debug('Event [%s] successfully deleted' % event_name)
             return True
@@ -375,6 +399,9 @@ class PushdEvent(object):
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
+        if not response:
+            return None
+
         if response.status_code == 200:
             logger.debug('Statistics returned')
             return json.loads( response.json() )
@@ -399,6 +426,9 @@ class PushdEvent(object):
 
         response = http_request(url, method)
 
+        if not response:
+            return False
+
         if response.status_code == 204:
             # We can't be sure push notifications are delivered
             # 204 means only that pushd will handle the request
@@ -416,8 +446,8 @@ def http_request(url, method, *args, **kwargs):
     method: 'GET', 'POST', 'PUT', 'DELETE'
     """
     if not url.startswith('http://'):
-	url = 'http://' + url 	
-    
+	url = 'http://' + url
+
     try:
         page = requests.request(method, url, *args, **kwargs)
     except requests.exceptions.ConnectionError:
