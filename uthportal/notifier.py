@@ -7,7 +7,7 @@ import requests
 
 from logger import get_logger
 
-api = {
+base_api = {
     'is_alive':               ('/status', 'GET'),
     'users.register' :        ('/subscribers', 'POST'),
     'users.unregister':       ('/subscribers/{pushd_id}', 'DELETE'),
@@ -21,6 +21,7 @@ api = {
     'event.statistics':       ('/event/{event_name}', 'GET')
 }
 
+api = { }
 logger = None
 
 class PushdWrapper(object):
@@ -38,8 +39,8 @@ class PushdWrapper(object):
 
         # Prepend pushd host:port in api urls
         base_url = '%s:%s' % (settings['notifier']['host'], settings['notifier']['port'])
-        for (key, value) in api.iteritems():
-            api[key] = base_url + value
+	for (key, value) in base_api.iteritems():
+            api[key] = (base_url + value[0], value[1])
 
     def is_alive(self):
         """
@@ -48,12 +49,11 @@ class PushdWrapper(object):
         (url, method) = api['is_alive']
         response = http_request(url, method)
 
-        return True if response.status_code == 204 else False
+        return True if response and response.status_code == 204 else False
 
 
 class PushdUsers(object):
     def __init__(self, db_manager):
-        self.settings = settings
         self.db_manager = db_manager
 
     def __getitem__(self, email):
@@ -415,14 +415,20 @@ def http_request(url, method, *args, **kwargs):
 
     method: 'GET', 'POST', 'PUT', 'DELETE'
     """
-
+    if not url.startswith('http://'):
+	url = 'http://' + url 	
+    
     try:
-        page = request(method, url, *args, **kwargs)
+        page = requests.request(method, url, *args, **kwargs)
     except requests.exceptions.ConnectionError:
         logger.error('[%s] Connection error exception thrown' % url)
         return None
     except requests.exceptions.Timeout:
         logger.error('[%s] Timeout exception thrown' % url)
+	return None
+    except Exception as e:
+        logger.error(e)
+	return None
 
     page.encoding = 'utf-8'
     return page
