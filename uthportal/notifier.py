@@ -10,9 +10,9 @@ from logger import get_logger
 base_api = {
     'is_alive':               ('/status', 'GET'),
     'users.register' :        ('/subscribers', 'POST'),
-    'users.unregister':       ('/subscribers/{pushd_id}', 'DELETE'),
-    'users.update':           ('/subscribers/{pushd_id}', 'POST'),
-    'user.info':              ('/subscribers/(pushd_id}', 'GET'),
+    'users.unregister':       ('/subscriber/{pushd_id}', 'DELETE'),
+    'users.update':           ('/subscriber/{pushd_id}', 'POST'),
+    'user.info':              ('/subscriber/(pushd_id}', 'GET'),
     'user.subscribe':         ('/subscriber/{pushd_id}/subscriptions/{event_name}', 'POST'),
     'user.unsubscribe':       ('/subscriber/{pushd_id}/subscriptions/{event_name}', 'DELETE'),
     'user.get_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'GET'),
@@ -87,12 +87,12 @@ class PushdUsers(object):
         (url, method) = api['users.register']
 
         logger.debug('Making %s request @%s', method, url)
-        response = http_request(url, method, params=payload)
+        response = http_request(url, method, data=payload)
 
 	if not response:
 	    return None
 
-        content = json.loads( response.json() )
+        content = response.json()
 
         # 200 & 201 status codes are considered valid responses
         if response.status_code == 200:
@@ -113,7 +113,7 @@ class PushdUsers(object):
         """
         Returns True if user is currently registered
         """
-        pass
+        return self.update(email)
 
     def update(self, email, lang='gr', **kwargs):
         """
@@ -123,14 +123,11 @@ class PushdUsers(object):
         """
 
         pushd_id = self._get_pushd_id(email)
-
         if not pushd_id:
             return False
 
         (url, method) = api['users.update']
-        url = url.format({
-            'pushd_id': pushd_id
-        })
+        url = url.format( pushd_id=pushd_id )
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
@@ -164,7 +161,7 @@ class PushdUsers(object):
             return False
 
         (url, method) = api['users.unregister']
-        url = url.format( {'pushd_id': pushd_id} )
+        url = url.format( pushd_id=pushd_id )
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
@@ -224,7 +221,7 @@ class PushdUser(object):
 
         if response.status_code == 200:
             logger.debug('User exists! Returning info')
-            return json.loads( response.json() )
+            return response.json()
 
         if response.status_code == 400:
             logger.error('Invalid pushd_id format')
@@ -252,7 +249,7 @@ class PushdUser(object):
         payload = kwargs
 
         logger.debug('Making %s request @%s', method, url)
-        response = http_request(url, method, params=payload)
+        response = http_request(url, method, data=payload)
 
         if not response:
             return False
@@ -324,7 +321,7 @@ class PushdUser(object):
 
         if response.status_code == 200:
             logger.debug('Recieved subscriptions for "%s"' % self.pushd_id)
-            events_dict = json.loads( response.json() )
+            events_dict = response.json()
             return [ event_name for (event_name, _) in events_dict.iteritems() ]
 
         if response.status_code == 404:
@@ -404,7 +401,7 @@ class PushdEvent(object):
 
         if response.status_code == 200:
             logger.debug('Statistics returned')
-            return json.loads( response.json() )
+            return response.json()
 
         if response.status_code == 404:
             logger.warning('Event [%s] does not exist' % event_name)
