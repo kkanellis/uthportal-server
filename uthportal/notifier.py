@@ -62,8 +62,9 @@ class PushdUsers(object):
         if pushd_id:
             return PushdUser(pushd_id)
         else:
-            logger.error('User "%s" not found in database' % email)
-            return PushdUser(None)
+            err_str = 'User "%s" not found in database' % email
+            logger.error(err_str)
+            raise KeyError(err_str)
 
     def register(self, protocol, token, lang='gr', **kwargs):
         """
@@ -109,7 +110,7 @@ class PushdUsers(object):
 
         return None
 
-    def exists(self, email):
+    def __contains__(self, email):
         """
         Returns True if user is currently registered
         """
@@ -348,27 +349,27 @@ class PushdEvents(object):
         else:
             raise KeyError('No valid template found for this event: ' + event_name)
 
-    def delete(self, event_name):
+    def __delitem__(self, event_name):
         (url, method) = api['events.delete']
         url = url.format( {'event_name': event_name })
 
         response = http_request(url, method)
 
         if not response:
-            return False
+            logger.warning('Failed to remove [%s], No response' % event_name)
 
         if response.status_code == 204:
             logger.debug('Event [%s] successfully deleted' % event_name)
-            return True
         elif response.status_code == 404:
-            logger.warning('Event [%s] does not exist' % event_name)
+            err_str = 'Event [%s] does not exist' % event_name
+            logger.error(err_str)
+            raise KeyError(err_str)
         else:
             logger.error('Request returned [%s]' % response.status_code)
 
-        return False
 
-    def template_exist(self, event_name):
-        return True if self.__get_collection[event_name] in self.templates else False
+    def __contains__(self, event_name):
+        return True if self.__get_collection(event_name) in self.templates.keys() else False
 
     def __get_collection(self, fullpath):
         dot_parts = fullpath.split('.')

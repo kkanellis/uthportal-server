@@ -30,7 +30,7 @@ class TestPushWrapper(unittest.TestCase):
         #Add user to databse
         self.db_manager.insert_document("users.active",
         {'email' : 'test@uth.gr', 'token': '12345678', 'pushd_id': user_id})
-        self.assertTrue(self.pushd_wrapper.users.exists('test@uth.gr'))
+        self.assertTrue('test@uth.gr' in self.pushd_wrapper.users)
         #try to get user with getter
         pushd_user = self.pushd_wrapper.users['test@uth.gr']
         self.assertIsNotNone(pushd_user)
