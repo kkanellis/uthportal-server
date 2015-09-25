@@ -25,12 +25,15 @@ class TestPushd(unittest.TestCase):
 
     def routine(self):
         self.assertTrue(self.pushd.is_alive())
-        user_id = self.pushd.users.register('gcm', 'testtoken@!#123')
+        user_id = self.pushd.users.register('gcm', 'testtoken123')
         self.assertIsNotNone(user_id)
         #Add user to databse
         self.db_manager.insert_document("users.active",
         {'email' : 'test@uth.gr', 'token': '12345678', 'pushd_id': user_id})
-        self.assertTrue('test@uth.gr' in self.pushd.users)
+        #self.assertTrue('test@uth.gr' in self.pushd.users)
+
+        self.assertTrue(self.pushd.users.update('testtoken123'))
+
         #try to get user with getter
         pushd_user = self.pushd.users['test@uth.gr']
         self.assertIsNotNone(pushd_user)

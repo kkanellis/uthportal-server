@@ -131,7 +131,7 @@ class PushdUsers(object):
 
         This method should be called each time the client app is launched
         """
-
+        
         pushd_id = self._get_pushd_id(email)
         if not pushd_id:
             return False
