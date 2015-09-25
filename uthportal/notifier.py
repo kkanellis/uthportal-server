@@ -271,7 +271,7 @@ class PushdUser(object):
 
     def is_subscribed_to(self, event_name):
         """
-        Returns a list with user subscriptions
+        Checks if user is subscribed to event_name
         """
         (url, method) = api['user.is_subscribed_to']
         url = url.format( **{
@@ -400,7 +400,7 @@ class PushdEvents(object):
 
 class PushdEvent(object):
     def __init__(self, event_name, template):
-        self.name = name
+        self.name = event_name
         self.template = template
 
     def statistics(self):
