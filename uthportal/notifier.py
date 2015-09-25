@@ -14,6 +14,7 @@ base_api = {
     'users.update':           ('/subscriber/{pushd_id}', 'POST'),
     'user.info':              ('/subscriber/{pushd_id}', 'GET'),
     'user.subscribe':         ('/subscriber/{pushd_id}/subscriptions/{event_name}', 'POST'),
+    'user.is_subscribed_to':  ('/subscriber/{pushd_id}/subscriptions/{event_name}', 'GET'),
     'user.unsubscribe':       ('/subscriber/{pushd_id}/subscriptions/{event_name}', 'DELETE'),
     'user.get_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'GET'),
     'user.set_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'POST'),
@@ -24,8 +25,7 @@ base_api = {
 api = { }
 logger = None
 
-class PushdWrapper(object):
-
+class Pushd(object):
     def __init__(self, settings, db_manager, event_templates):
         global logger
 
@@ -48,8 +48,13 @@ class PushdWrapper(object):
         """
         (url, method) = api['is_alive']
         response = http_request(url, method)
-
-        return True if response and response.status_code == 204 else False
+        if response.status_code == 204:
+            return True
+        elif response.status_code == 503:
+            logger.warn("Pushd can't connect to Redis!")
+            return False
+        else:
+            return False
 
 
 class PushdUsers(object):
@@ -142,6 +147,11 @@ class PushdUsers(object):
         if response.status_code == 400:
             logger.error('Invalid pushd_id/field format')
         elif response.status_code == 404:
+            #This is a special case
+            #If a 404 is returned, this means that pushd deleted this client\
+            #because of inactivity
+            #This client has to re-register, in order to recieve notifications
+            #TODO: handle this
             logger.error('User not found [id=%s]' % pushd_id)
         else:
             logger.error('Request returned [%s]' % response.status_code)
@@ -199,16 +209,14 @@ class PushdUsers(object):
 
 class PushdUser(object):
     def __init__(self, pushd_id):
+        if not pushd_id:
+            raise ValueError('pushd_id is None')
         self.pushd_id = pushd_id
 
     def info(self):
         """
         Returns info about the user
         """
-
-        if not self.pushd_id:
-            return None
-
         (url, method) = api['user.info']
         url = url.format(**{
             'pushd_id': self.pushd_id
@@ -235,10 +243,6 @@ class PushdUser(object):
         """
         Subscribes the user to a notification event
         """
-
-        if not self.pushd_id:
-            return False
-
         (url, method) = api['user.subscribe']
         url = url.format(**{
             'pushd_id': self.pushd_id,
@@ -264,14 +268,36 @@ class PushdUser(object):
 
         return False
 
+
+    def is_subscribed_to(self, event_name):
+        """
+        Returns a list with user subscriptions
+        """
+        (url, method) = api['user.is_subscribed_to']
+        url = url.format( **{
+            'pushd_id': self.pushd_id,
+            'event_name': event_name
+        })
+
+        response = http_request(url, method)
+
+        if not response:
+            return None
+
+        if response.status_code == 200:
+            return True
+        if response.status_code == 404:
+            logger.error('User [id=%s] does not exist' % self.pushd_id)
+        else:
+            logger.error('Request returned [%s]' % response.status_code)
+
+        return False
+
+
     def unsubscribe(self, event_name):
         """
         Unsubscribes the user from a notification event
         """
-
-        if not self.pushd_id:
-            return False
-
         (url, method) = api['user.unsubscribe']
         url = url.format( **{
             'pushd_id': self.pushd_id,
@@ -300,10 +326,6 @@ class PushdUser(object):
         """
         Returns a list with user subscriptions
         """
-
-        if not self.pushd_id:
-            return None
-
         (url, method) = api['user.get_subscriptions']
         url = url.format( **{
             'pushd_id': self.pushd_id,
@@ -325,6 +347,7 @@ class PushdUser(object):
             logger.error('Request returned [%s]' % response.status_code)
 
         return None
+
 
     def set_subscriptions(self, events):
         # TODO
