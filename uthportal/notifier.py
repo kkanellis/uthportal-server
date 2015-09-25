@@ -12,7 +12,7 @@ base_api = {
     'users.register' :        ('/subscribers', 'POST'),
     'users.unregister':       ('/subscriber/{pushd_id}', 'DELETE'),
     'users.update':           ('/subscriber/{pushd_id}', 'POST'),
-    'user.info':              ('/subscriber/(pushd_id}', 'GET'),
+    'user.info':              ('/subscriber/{pushd_id}', 'GET'),
     'user.subscribe':         ('/subscriber/{pushd_id}/subscriptions/{event_name}', 'POST'),
     'user.unsubscribe':       ('/subscriber/{pushd_id}/subscriptions/{event_name}', 'DELETE'),
     'user.get_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'GET'),
@@ -198,7 +198,7 @@ class PushdUsers(object):
 
 class PushdUser(object):
     def __init__(self, pushd_id):
-        self.pushd_id = push_id
+        self.pushd_id = pushd_id
 
     def info(self):
         """
@@ -209,9 +209,7 @@ class PushdUser(object):
             return None
 
         (url, method) = api['user.info']
-        url = url.format({
-            'pushd_id': self.pushd_id
-        })
+        url = url.format(pushd_id=self.pushd_id)
 
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
