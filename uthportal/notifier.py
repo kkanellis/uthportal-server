@@ -19,7 +19,8 @@ base_api = {
     'user.get_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'GET'),
     'user.set_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'POST'),
     'event.delete':           ('/event/{event_name}', 'DELETE'),
-    'event.statistics':       ('/event/{event_name}', 'GET')
+    'event.statistics':       ('/event/{event_name}', 'GET'),
+    'event.send':             ('/event/{event_name}', 'POST')
 }
 
 api = { }
@@ -48,6 +49,9 @@ class Pushd(object):
         """
         (url, method) = api['is_alive']
         response = http_request(url, method)
+        if not response:
+            return False
+
         if response.status_code == 204:
             return True
         elif response.status_code == 503:
@@ -365,7 +369,7 @@ class PushdEvents(object):
 
     def __getitem__(self, event_name):
         collection = self.__get_collection(event_name)
-
+        logger.info(collection)
         if collection in self.templates:
             template = self.templates[collection]
             return PushdEvent(event_name, template)
@@ -396,24 +400,23 @@ class PushdEvents(object):
 
     def __get_collection(self, fullpath):
         dot_parts = fullpath.split('.')
-        return '.'.join(dot_parts[::-1])
+        return '.'.join(dot_parts[:-1])
 
 class PushdEvent(object):
     def __init__(self, event_name, template):
+        if not event_name:
+            raise ValueError("event_name is None")
+
         self.name = event_name
         self.template = template
 
     def statistics(self):
-        if not self.name:
-            return None
-
-        (url, method) = api['user.statistics']
+        (url, method) = api['event.statistics']
         url = url.format( **{
             'event_name': self.name
         })
 
         response = http_request(url, method)
-
         if not response:
             return None
 
@@ -428,19 +431,19 @@ class PushdEvent(object):
 
         return None
 
-    def send(self, data=None, var=None):
-        if not self.name:
-            return False
+    def send(self, data, var=None):
+        """
+        Send this event to all subnscribed users
+        data: payload sent to subscribed clients
+        var: used to format msg string with variables
+        """
+        if not var:
+            var = {}
 
-        if not data or not var:
-            logger.error('Empty data and/or var dicts')
-            return False
-
-        (url, method) = api['user.send']
-        url = url.format( {'event_name': self.name})
+        (url, method) = api['event.send']
+        url = url.format( **{'event_name': self.name})
 
         response = http_request(url, method)
-
         if not response:
             return False
 
@@ -460,20 +463,21 @@ def http_request(url, method, *args, **kwargs):
 
     method: 'GET', 'POST', 'PUT', 'DELETE'
     """
+
     if not url.startswith('http://'):
         url = 'http://' + url
 
     try:
         logger.debug('Making %s request @ %s', method, url)
         page = requests.request(method, url, *args, **kwargs)
-    except requests.exceptions.ConnectionError:
-        logger.error('[%s] Connection error exception thrown' % url)
+    except requests.exceptions.ConnectionError as e:
+        logger.error('%s: %s' % (e.args[0][0], e.args[0][1]))
         return None
     except requests.exceptions.Timeout:
         logger.error('[%s] Timeout exception thrown' % url)
         return None
     except Exception as e:
-        logger.error(e)
+        logger.error(str(e))
         return None
 
     page.encoding = 'utf-8'

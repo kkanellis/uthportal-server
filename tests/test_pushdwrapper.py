@@ -45,7 +45,17 @@ class TestPushd(unittest.TestCase):
         self.assertTrue(pushd_user.subscribe('very_real_event.testing'))
         subscriptions = pushd_user.get_subscriptions()
         self.assertIsNotNone(subscriptions)
+        self.logger.info(subscriptions)
 
+        self.logger.info('getting event info')
+        event = self.pushd.events['very_real_event.testing']
+        self.assertIsNotNone(event)
+        info = event.statistics()
+        self.assertIsNotNone(info)
+        self.logger.info(info)
+
+        #send event
+        self.assertTrue(event.send('example_payload'))
 
         #unregister user
         self.assertTrue(self.pushd.users.unregister('test@uth.gr'))
