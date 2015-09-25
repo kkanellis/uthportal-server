@@ -12,7 +12,7 @@ base_api = {
     'users.register' :        ('/subscribers', 'POST'),
     'users.unregister':       ('/subscriber/{pushd_id}', 'DELETE'),
     'users.update':           ('/subscriber/{pushd_id}', 'POST'),
-    'user.info':              ('/subscriber/(pushd_id}', 'GET'),
+    'user.info':              ('/subscriber/{pushd_id}', 'GET'),
     'user.subscribe':         ('/subscriber/{pushd_id}/subscriptions/{event_name}', 'POST'),
     'user.unsubscribe':       ('/subscriber/{pushd_id}/subscriptions/{event_name}', 'DELETE'),
     'user.get_subscriptions': ('/subscriber/{pushd_id}/subscriptions', 'GET'),
@@ -83,10 +83,8 @@ class PushdUsers(object):
         }
         payload.update(kwargs)
 
-        # Make the request
         (url, method) = api['users.register']
 
-        logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method, data=payload)
 
         if not response:
@@ -131,7 +129,6 @@ class PushdUsers(object):
         (url, method) = api['users.update']
         url = url.format( pushd_id=pushd_id )
 
-        logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
         if not response:
@@ -163,9 +160,10 @@ class PushdUsers(object):
             return False
 
         (url, method) = api['users.unregister']
-        url = url.format( pushd_id=pushd_id )
+        url = url.format(**{
+            'pushd_id': pushd_id
+        })
 
-        logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
         if not response:
@@ -211,11 +209,10 @@ class PushdUser(object):
             return None
 
         (url, method) = api['user.info']
-        url = url.format({
+        url = url.format(**{
             'pushd_id': self.pushd_id
         })
 
-        logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
         if not response:
@@ -243,14 +240,12 @@ class PushdUser(object):
             return False
 
         (url, method) = api['user.subscribe']
-        url = url.format({
+        url = url.format(**{
             'pushd_id': self.pushd_id,
             'event_name': event_name
         })
-
         payload = kwargs
 
-        logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method, data=payload)
 
         if not response:
@@ -269,21 +264,20 @@ class PushdUser(object):
 
         return False
 
-    def unsubscribe(self):
+    def unsubscribe(self, event_name):
         """
         Unsubscribes the user from a notification event
         """
 
-        if self.pushd_id:
+        if not self.pushd_id:
             return False
 
         (url, method) = api['user.unsubscribe']
-        url = url.format( {
+        url = url.format( **{
             'pushd_id': self.pushd_id,
             'event_name': event_name
         })
 
-        logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
         if not response:
@@ -307,15 +301,14 @@ class PushdUser(object):
         Returns a list with user subscriptions
         """
 
-        if self.pushd_id:
+        if not self.pushd_id:
             return None
 
         (url, method) = api['user.get_subscriptions']
-        url = url.format( {
+        url = url.format( **{
             'pushd_id': self.pushd_id,
         })
 
-        logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
         if not response:
@@ -334,6 +327,7 @@ class PushdUser(object):
         return None
 
     def set_subscriptions(self, events):
+        # TODO
         pass
 
 class PushdEvents(object):
@@ -360,7 +354,6 @@ class PushdEvents(object):
         (url, method) = api['events.delete']
         url = url.format( {'event_name': event_name })
 
-        logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
         if not response:
@@ -393,9 +386,10 @@ class PushdEvent(object):
             return None
 
         (url, method) = api['user.statistics']
-        url = url.format( {'event_name': self.name} )
+        url = url.format( **{
+            'event_name': self.name
+        })
 
-        logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
         if not response:
@@ -414,7 +408,7 @@ class PushdEvent(object):
 
     def send(self, data=None, var=None):
         if not self.name:
-            return None
+            return False
 
         if not data or not var:
             logger.error('Empty data and/or var dicts')
@@ -448,6 +442,7 @@ def http_request(url, method, *args, **kwargs):
 	url = 'http://' + url
 
     try:
+        logger.debug('Making %s request @ %s', method, url)
         page = requests.request(method, url, *args, **kwargs)
     except requests.exceptions.ConnectionError:
         logger.error('[%s] Connection error exception thrown' % url)
