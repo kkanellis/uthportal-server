@@ -30,9 +30,7 @@ class TestPushd(unittest.TestCase):
         #Add user to databse
         self.db_manager.insert_document("users.active",
         {'email' : 'test@uth.gr', 'token': '12345678', 'pushd_id': user_id})
-        #self.assertTrue('test@uth.gr' in self.pushd.users)
-
-        self.assertTrue(self.pushd.users.update('testtoken123'))
+        self.assertTrue('test@uth.gr' in self.pushd.users)
 
         #try to get user with getter
         pushd_user = self.pushd.users['test@uth.gr']
