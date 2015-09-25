@@ -89,8 +89,8 @@ class PushdUsers(object):
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method, data=payload)
 
-	if not response:
-	    return None
+        if not response:
+            return None
 
         content = response.json()
 
@@ -121,7 +121,7 @@ class PushdUsers(object):
         """
         Pings/updates the user to pushd
 
-        This method should be call each time the client app is launched
+        This method should be called each time the client app is launched
         """
 
         pushd_id = self._get_pushd_id(email)
@@ -134,11 +134,11 @@ class PushdUsers(object):
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
-	if not response:
-	    return False
+        if not response:
+            return False
 
         if response.status_code == 204:
-            logger.debug('User info edited successfully')
+            logger.debug('[%s]: User info updated successfully' % email)
             return True
 
         if response.status_code == 400:
@@ -168,8 +168,8 @@ class PushdUsers(object):
         logger.debug('Making %s request @%s', method, url)
         response = http_request(url, method)
 
-	if not response:
-	    return False
+        if not response:
+            return False
 
         if response.status_code == 204:
             logger.debug('User unregistered successfully')
@@ -200,7 +200,7 @@ class PushdUsers(object):
 
 class PushdUser(object):
     def __init__(self, pushd_id):
-        self.pushd_id = push_id
+        self.pushd_id = pushd_id
 
     def info(self):
         """
