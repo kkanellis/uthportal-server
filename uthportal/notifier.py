@@ -94,11 +94,13 @@ class PushdUsers(object):
 
         # 200 & 201 status codes are considered valid responses
         if response.status_code == 200:
-            logger.debug('User already registered [id=%s]')
-            return content['id']
+            _id = content['id']
+            logger.debug('User already registered [id=%s]' % _id)
+            return _id
         elif response.status_code == 201:
-            logger.debug('User successfull registered [id=%s]')
-            return content['id']
+            _id = content['id']
+            logger.debug('User successfull registered [id=%s]' % _id)
+            return _id
 
         if response.status_code == 400:
             logger.error('register: Invalid specified token/protocol')
@@ -454,4 +456,3 @@ def http_request(url, method, *args, **kwargs):
 
     page.encoding = 'utf-8'
     return page
-
