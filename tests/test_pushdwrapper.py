@@ -14,7 +14,14 @@ class TestPushWrapper(unittest.TestCase):
         self.settings['log_dir'] = os.path.abspath("test_logs")
         self.settings['logger']['levels']['notifier'] = 'DEBUG'
         self.db_manager = MemoryDatabaseManager()
-        self.pushd_wrapper = PushdWrapper(self.settings, self.db_manager)
+
+        templates = {'very_real_event': {
+                                    'title' : 'test',
+                                    'msg' : 'this is a message, for real'
+                                    }
+                    }
+        self.pushd_wrapper = PushdWrapper(self.settings, self.db_manager, templates)
+        self.logger = get_logger('test', self.settings)
 
     def routine(self):
         self.assertTrue(self.pushd_wrapper.is_alive())
@@ -27,6 +34,20 @@ class TestPushWrapper(unittest.TestCase):
         #try to get user with getter
         pushd_user = self.pushd_wrapper.users['test@uth.gr']
         self.assertIsNotNone(pushd_user)
+        user_info = pushd_user.info()
+        self.assertIsNotNone(user_info)
+        self.logger.info('User {0}, info: {1}'.format(user_id, str(user_info)))
+        #events
+        # try to get subscriptiuons before registering anythingg
+        subscriptions = pushd_user.get_subscriptions()
+        self.assertIsNotNone(subscriptions)
+        #register test event
+        self.assertTrue(pushd_user.subscribe('very_real_event.testing'))
+        subscriptions = pushd_user.get_subscriptions()
+        self.assertIsNotNone(subscriptions)
 
+
+        #unregister user
+        self.assertTrue(self.pushd_wrapper.users.unregister('test@uth.gr'))
     def test_pusd_wrapper(self):
         self.routine()

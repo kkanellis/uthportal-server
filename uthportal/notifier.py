@@ -26,7 +26,7 @@ logger = None
 
 class PushdWrapper(object):
 
-    def __init__(self, settings, db_manager):
+    def __init__(self, settings, db_manager, event_templates):
         global logger
 
         self.settings = settings
@@ -35,11 +35,11 @@ class PushdWrapper(object):
         logger = get_logger('notifier', settings)
 
         self.users = PushdUsers(db_manager)
-        self.events = PushdEvents(db_manager)
+        self.events = PushdEvents(event_templates)
 
         # Prepend pushd host:port in api urls
         base_url = '%s:%s' % (settings['notifier']['host'], settings['notifier']['port'])
-	for (key, value) in base_api.iteritems():
+        for (key, value) in base_api.iteritems():
             api[key] = (base_url + value[0], value[1])
 
     def is_alive(self):
@@ -99,7 +99,7 @@ class PushdUsers(object):
             return _id
         elif response.status_code == 201:
             _id = content['id']
-            logger.debug('User successfull registered [id=%s]' % _id)
+            logger.debug('User successfully registered [id=%s]' % _id)
             return _id
 
         if response.status_code == 400:
@@ -216,10 +216,9 @@ class PushdUser(object):
         response = http_request(url, method)
 
         if not response:
-	    return None
+            return None
 
         if response.status_code == 200:
-            logger.debug('User exists! Returning info')
             return response.json()
 
         if response.status_code == 400:
@@ -332,6 +331,12 @@ class PushdUser(object):
 
 class PushdEvents(object):
     def __init__(self, event_templates):
+        for key in event_templates.keys():
+            template = event_templates[key]
+            if ('title' not in template or 'msg' not in template):
+                err_str = ' "title" and/or "msg" are missing from "%s" template' % template
+                logger.error(err_str)
+                raise ValueError(err_str)
         self.templates = event_templates
 
     def __getitem__(self, event_name):
@@ -339,16 +344,9 @@ class PushdEvents(object):
 
         if collection in self.templates:
             template = self.templates[collection]
-
-            if ('title' not in template or
-                    'msg' not in template):
-                logger.error(' "title" and/or "msg" are missing from "%s" template' % collection)
-                return PushdEvent(None, None)
-
             return PushdEvent(event_name, template)
         else:
-            logger.error('["%s"] No valid template found' % event_name)
-            return PushdEvent(None, None)
+            raise KeyError('No valid template found for this event: ' + event_name)
 
     def delete(self, event_name):
         (url, method) = api['events.delete']
@@ -439,7 +437,7 @@ def http_request(url, method, *args, **kwargs):
     method: 'GET', 'POST', 'PUT', 'DELETE'
     """
     if not url.startswith('http://'):
-	url = 'http://' + url
+        url = 'http://' + url
 
     try:
         logger.debug('Making %s request @ %s', method, url)
@@ -449,10 +447,10 @@ def http_request(url, method, *args, **kwargs):
         return None
     except requests.exceptions.Timeout:
         logger.error('[%s] Timeout exception thrown' % url)
-	return None
+        return None
     except Exception as e:
         logger.error(e)
-	return None
+        return None
 
     page.encoding = 'utf-8'
     return page
