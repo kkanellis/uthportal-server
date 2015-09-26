@@ -97,6 +97,10 @@ class BaseUserCollection(object):
 
         return self._children_class(self.settings, self.db_manager, user_info)
 
+        #    return ActiveUser(self.settings, self.db_manager, user_info)
+        #else:
+        #    return PendingUser(self.settings, self.db_manager, user_info)
+
     def __delitem__(self, email):
         result = self.db_manager.remove_document(self._collection, {'email': email})
         if not result:
@@ -192,7 +196,7 @@ class PendingUser(BaseUser):
         return self._sg.send(message)
 
 class ActiveUser(BaseUser):
-    def __init__(self, settings, db_manager, **kwargs):
+    def __init__(self, settings, db_manager):
         super(ActiveUser, self).__init__(settings, db_manager)
 
         for key in ('user_id', 'email'):
