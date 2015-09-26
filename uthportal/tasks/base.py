@@ -177,8 +177,10 @@ class BaseTask(object):
                 # Data differ only if new_data exist
                 differ = True if new_data else False
 
-                # We notify the user only if the task is not run for the 1st time
-                notify = True if 'first_updated' in self.document else False
+                # We notify the user if and only if:
+                # a) data differ and
+                # b) task is NOT run for the first time
+                notify = True if differ and 'first_updated' in self.document else False
 
             if differ:
                 self.logger.info(
