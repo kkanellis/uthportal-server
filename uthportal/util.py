@@ -34,6 +34,8 @@ class BSONEncoderEx(JSONEncoder):
             return JSONEncoder.default(self, obj, **kwargs)
 
 def is_equal(a, b):
+    a = str(a)
+    b = str(b)
     if len(a) != len(b):
         return False
 
