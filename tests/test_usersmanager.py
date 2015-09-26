@@ -51,5 +51,24 @@ class TestUsersManager(unittest.TestCase):
         self.logger.info('trying to authenticate user')
         self.assertTrue(user.authenticate(user.info['auth_id']))
 
+        self.logger.info('deleting user')
+        del self.user_manager.users.active['test@uth.gr']
+        #if this fails, KeyError is thrown
+        self.assertFalse('test@uth.gr' in self.user_manager.users.active)
+
+        #special cases
+        self.logger.info('try to get non-existant users')
+        self.assertRaises(KeyError, lambda: self.user_manager.users.active['a@a.fail'])
+        self.assertRaises(KeyError, lambda: self.user_manager.users.pending['a@a.fail'])
+
+        #
+        self.logger.info('Creating user special@uth.gr')
+        response = self.user_manager.register_new_user('special@uth.gr')
+        self.assertEqual(response[0], 400) #sendgrid must answer with wrong password
+        user = self.user_manager.users.pending['special@uth.gr']
+        self.assertFalse(user.activate("asdasd"))
+        #TODO: add more    
+
+
     def test_usersmanager(self):
         self.routine()

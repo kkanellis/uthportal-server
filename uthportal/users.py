@@ -97,10 +97,6 @@ class BaseUserCollection(object):
 
         return self._children_class(self.settings, self.db_manager, user_info)
 
-        #    return ActiveUser(self.settings, self.db_manager, user_info)
-        #else:
-        #    return PendingUser(self.settings, self.db_manager, user_info)
-
     def __delitem__(self, email):
         result = self.db_manager.remove_document(self._collection, {'email': email})
         if not result:
