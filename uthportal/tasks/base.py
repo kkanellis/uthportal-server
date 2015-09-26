@@ -159,12 +159,33 @@ class BaseTask(object):
                 if new_data:
                     if type(old_data) == type(new_data):
 
-                        # TODO: Better difference detection based on data type (list, dict, etc)
-                        differ = True if old_data != new_data else False
-                        notify = differ
+                        if isinstance(new_data, list):
+                            last_updated = self._get_document_field(self.document, 'last_updated')
+
+                            # Check if new list entries are present in new_data since last update
+                            new_entries = [ entry for entry in new_data if entry not in old_data ]
+
+                            if new_entries:
+                                differ = True
+                                for entry in new_entries:
+                                    assert ('date' in entry and 'has_time' in entry)
+
+                                    # Check if entry was published after last update date
+                                    # NOTE: Avoid comparing time because of small time
+                                    #       changes which may occur in production and
+                                    #       not properly notify the clients
+                                    if entry['date'].date() >= last_updated.date():
+                                        notify = True
+                                        break
+                            else:
+                                differ = notify = False
+
+                        else:
+                            differ = notify = True if old_data != new_data else False
+
                     else:
                         self.logger.warning(
-                            'Different type (%s - %s) for the same field [%s]'
+                            'Different type (%s - %s) for the same update field [%s]'
                                 % (type(old_data), type(new_data), field)
                         )
                         differ = notify = True
