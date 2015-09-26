@@ -109,21 +109,11 @@ class BaseTask(object):
         old_fields = { field: self._get_document_field(self.document, field)
                             for field in self.update_fields }
 
-        # Checking for differences in the according update_fields
-        differ = False
-        for field in self.update_fields:
-            if new_fields[field] and old_fields[field] != new_fields[field]:
-                self.logger.info(
-                        truncate_str(
-                            'New entries in field "%s"' % new_fields[field],
-                            150)
-                        )
-
-                differ = True
-                break
+        # Check if new data is available
+        (data_differ, should_notify) = self.process_new_data(new_fields, old_fields)
 
         now = datetime.now()
-        if differ:
+        if data_differ:
             self.logger.debug('Archiving old document...')
             self.archive()
 
@@ -139,8 +129,9 @@ class BaseTask(object):
             self.logger.debug('Transmitting new document...')
             self.transmit()
 
-            self.logger.debug('Notifing clients...')
-            self.notify()
+            if should_notify:
+                self.logger.debug('Notifing clients...')
+                self.notify()
         else:
             self.logger.debug('No new entries found')
             self._set_document_field(self.document, 'last_updated', now)
@@ -149,6 +140,55 @@ class BaseTask(object):
         self.logger.debug('Task updated successfully!')
 
         self.post_process()
+
+    def process_new_data(self, new_fields, old_fields):
+        """
+        Returns tuple (data_differ[bool], should_notify[bool])
+
+        data_differ:   True if we have differences between new and old data
+        should_notify: True if we have to send push notification to the client
+        """
+
+        data_differ = should_notify = False
+
+        # Checking for differences in the according update_fields
+        for field in self.update_fields:
+            (old_data, new_data) = (old_fields[field], new_fields[field])
+
+            if old_data:
+                if new_data:
+                    if type(old_data) == type(new_data):
+
+                        # TODO: Better difference detection based on data type (list, dict, etc)
+                        differ = True if old_data != new_data else False
+                        notify = differ
+                    else:
+                        self.logger.warning(
+                            'Different type (%s - %s) for the same field [%s]'
+                                % (type(old_data), type(new_data), field)
+                        )
+                        differ = notify = True
+                else:
+                    # We shouldn't notify the user because it may be server error:
+                    # e.g problematic parser or invalid link
+                    differ = True
+                    notify = False
+            else:
+                # Data differ only if new_data exist
+                differ = True if new_data else False
+
+                # We notify the user only if the task is not run for the 1st time
+                notify = True if 'first_updated' in self.document else False
+
+            if differ:
+                self.logger.info(
+                    truncate_str( 'New entries in field "%s"' % field, 150 )
+                )
+
+            data_differ = data_differ or differ
+            should_notify = should_notify or notify
+
+        return (data_differ, should_notify)
 
     def notify(self):
         pass
@@ -232,3 +272,4 @@ class BaseTask(object):
             return document[keys[-1]]
         else:
             return None
+
