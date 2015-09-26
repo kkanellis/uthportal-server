@@ -55,23 +55,22 @@ class curriculum(StaticTask):
         entries = self._get_document_field(self.document, 'entries')
 
         # Organize entries by course name
-        course_curriculum = { }
+        courses_curriculum = { }
         for entry in entries:
             course_name = entry['course_name']
-            if course_name in course_curriculum:
-                course_curriculum[course_name].append(entry)
+            if course_name in courses_curriculum:
+                courses_curriculum[course_name].append(entry)
             else:
-                course_curriculum[course_name] = [ entry ]
+                courses_curriculum[course_name] = [ entry ]
 
         db_manager = self.database_manager
         db_collection = 'inf.courses'
 
         # Update each course's info
-        for course_name in course_curriculum:
-            curriculum = course_curriculum
-
+        for (course_name, curriculum) in courses_curriculum.iteritems():
             db_query = { 'info.name': course_name }
             document = db_manager.find_document(db_collection, db_query)
+
 
             if not document:
                 self.logger.warning('No database entry found for course "%s"' % course_name)
@@ -79,9 +78,9 @@ class curriculum(StaticTask):
 
             if 'curriculum' in document['info']:
                 self.logger.debug(
-                        'Overwritting previous curriculum: %s'
-                        % unicode( self._get_document_field(self.document, 'info.curriculum'))
-                        )
+                    'Overwritting previous curriculum: %s'
+                    % unicode( self._get_document_field(document, 'info.curriculum'))
+                )
 
             db_manager.update_document(db_collection, db_query, { '$set': { 'info.curriculum' : curriculum } })
             self.logger.debug('Curriculum updated successfully for "%s"' % document['code'])
