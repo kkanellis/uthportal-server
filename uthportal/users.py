@@ -1,5 +1,5 @@
 import uuid
-from abd import ABCMeta
+from abc import ABCMeta
 
 import sendgrid
 
@@ -13,33 +13,35 @@ def generate_auth_pair() :
    userid = uuid.uuid4()
    return (get_first_n_digits(userid.int, 8), str(userid))
 
-class UserManager(object)
+class UserManager(object):
     def __init__(self, settings, db_manager):
         self.db_manager = db_manager
         self.settings = settings
         self.logger = get_logger('user-control', settings)
-
-        self.active = ActiveUsers(settings, db_manager)
-        self.pending = ActiveUsers(settings, db_manager)
+        self.users = Users(settings, db_manager)
 
     def is_auth_id_available(self, auth_id):
-        acitve_user =
-            self.db_manager.find_document('users.active', {'auth_id': auth_id})
-        pending_user =
-            self.db_manager.find_document('users.pending', {'auth_id': auth_id})
+        active_user = self.db_manager.find_document(
+            'users.active',
+            {'auth_id': auth_id}
+        )
+        pending_user = self.db_manager.find_document(
+            'users.pending',
+            {'auth_id': auth_id}
+        )
         return not (active_user or pending_user)
 
     def is_token_available(self, token):
         user = self.db_manager.find_document('users.pending', {'token': token})
-        return True if user else False
+        return True if not user else False
 
     def is_activation_pair_available(self, auth_id, token):
-        return self.is_token_available(token) and
+        return self.is_token_available(token) and \
             self.is_auth_id_available(auth_id)
 
     def generate_unique_pair(self):
         (auth_id, token) = generate_auth_pair()
-        while not is_activation_pair_available(auth_id, token):
+        while not self.is_activation_pair_available(auth_id, token):
             (auth_id, token) = generate_auth_pair()
         return (auth_id, token)
 
@@ -57,20 +59,29 @@ class UserManager(object)
         user_info = {
             'email': email,
             'token': token,
-            'auth_id', auth_id
+            'auth_id': auth_id,
+            'tries': 0
         }
-        result = self.pending.append(user_info)
+        result = self.users.pending.append(user_info)
         if result:
-            pending_user = self.pending[email]
-            return pending_user.send_activation_email()
+            pending_user = self.users.pending[email]
+            return pending_user.send_activation_mail()
         else:
             return None
 
 ################################################################################
 # COLLECTIONS
 ################################################################################
-
 class Users(object):
+    """
+    Place holder class, to force dot-notaion
+    """
+    #TODO: is there a better way?
+    def __init__(self, settings, db_manager):
+        self.active = ActiveUsers(settings, db_manager)
+        self.pending = PendingUsers(settings, db_manager)
+
+class BaseUserCollection(object):
     __metaclass__ = ABCMeta
     def __init__(self, settings, db_manager):
         self.db_manager = db_manager
@@ -84,7 +95,7 @@ class Users(object):
         if not user_info:
             raise KeyError('User not found')
 
-        return self._children_class(settings, db_manager, user_info)
+        return self._children_class(self.settings, self.db_manager, user_info)
 
     def __delitem__(self, email):
         result = self.db_manager.remove_document(self._collection, {'email': email})
@@ -104,14 +115,14 @@ class Users(object):
     def append(self, user_info):
         return self.db_manager.insert_document(self._collection, user_info)
 
-class ActiveUsers(Users):
+class ActiveUsers(BaseUserCollection):
     def __init__(self, settings, db_manager):
         super(ActiveUsers, self).__init__(settings, db_manager)
         self._collection = 'users.active'
         self._children_class = ActiveUser
 
 
-class PendingUsers(Users):
+class PendingUsers(BaseUserCollection):
     def __init__(self, settings, db_manager):
         super(PendingUsers, self).__init__(settings, db_manager)
         self._collection = 'users.pending'
@@ -124,16 +135,16 @@ class PendingUsers(Users):
 # CHILDREN
 ################################################################################
 
-class User(object):
+class BaseUser(object):
     __metaclass__ = ABCMeta
     def __init__(self, settings, db_manager, info):
         self.settings = settings
         self.db_manager = db_manager
         self.info = info
 
-class PendingUser(User):
+class PendingUser(BaseUser):
     def __init__(self, settings, db_manager, info):
-        super(PendingUser, self).__init__(email, db_manager, info)
+        super(PendingUser, self).__init__(settings, db_manager, info)
         self.is_pending = True #TODO:needed?
 
         for key in ('token', 'tries', 'auth_id', 'email'):
@@ -180,9 +191,9 @@ class PendingUser(User):
         message.set_from('UthPortal <%s>' % self._email_from)
         return self._sg.send(message)
 
-class ActiveUser(User):
-    def __init__(self, email, db_manager, **kwargs):
-        super(ActiveUser, self).__init__(email, db_manager)
+class ActiveUser(BaseUser):
+    def __init__(self, settings, db_manager, **kwargs):
+        super(ActiveUser, self).__init__(settings, db_manager)
 
         for key in ('user_id', 'email'):
                 if key not in kwargs:
