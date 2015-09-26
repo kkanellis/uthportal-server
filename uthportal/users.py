@@ -44,20 +44,34 @@ class UserManager(object)
         return (auth_id, token)
 
     def register_new_user(self, email):
+        """
+        Registers a new user.
+         >Returns the status response from sendgrid if the registration was
+         >successful, None otherwise
+        """
+        if email in self.users.pending or email in self.users.active:
+            #already registered or active user
+            return None
+
         (auth_id, token) = self.generate_unique_pair()
-        info = {
+        user_info = {
             'email': email,
             'token': token,
             'auth_id', auth_id
         }
-        self.pending['']
-
+        result = self.pending.append(user_info)
+        if result:
+            pending_user = self.pending[email]
+            return pending_user.send_activation_email()
+        else:
+            return None
 
 ################################################################################
 # COLLECTIONS
 ################################################################################
 
 class Users(object):
+    __metaclass__ = ABCMeta
     def __init__(self, settings, db_manager):
         self.db_manager = db_manager
         self.settings = settings
@@ -78,9 +92,17 @@ class Users(object):
             raise KeyError('User not found')
 
     def __setiitem__(self, email, user):
+        #TODO: this is supposed to edit the user
         if not isinstance(user, self._children_class):
             raise KeyError('Invalid user type')
         self.db_manager.insert_document(self._collection, user.info)
+
+    def __contains__(self, email):
+        user = self.db_manager.find_document(self._collection, {'email': email})
+        return True if user else False
+
+    def append(self, user_info):
+        return self.db_manager.insert_document(self._collection, user_info)
 
 class ActiveUsers(Users):
     def __init__(self, settings, db_manager):
@@ -114,9 +136,9 @@ class PendingUser(User):
         super(PendingUser, self).__init__(email, db_manager, info)
         self.is_pending = True #TODO:needed?
 
-        for key in ('token', 'tries'):
+        for key in ('token', 'tries', 'auth_id', 'email'):
             if key not in info:
-                raise ValueError('%s not found in info' % key)
+                raise ValueError('[%s] not found in info' % key)
 
         #email settings
         email_settings = self.settings['auth']['email']
@@ -142,6 +164,9 @@ class PendingUser(User):
         message = sendgrid.Mail()
         message.add_to(self.info['email'])
         message.set_subject('UthPortal activation')
+        address = self.info['email']
+        token = self.info['token']
+        auth_id = self.info['auth_id']
         #TODO: make some proper html
         message.set_html(
             "Please click on the following link to activate your account:\
@@ -150,8 +175,8 @@ class PendingUser(User):
             Use this in your app, when asked for it.\
             This id is used to personalize your push notifications.\
             Please don't share this ID as it is supposed to be kept secret."\
-            .format(self._domain, address, token, userid))
-        message.set_text('Token: {0}, 8-digit: {1}'.format(token, userid))
+            .format(self._domain, address, token, auth_id))
+        message.set_text('Token: {0}, 8-digit: {1}'.format(token, auth_id))
         message.set_from('UthPortal <%s>' % self._email_from)
         return self._sg.send(message)
 
@@ -159,7 +184,7 @@ class ActiveUser(User):
     def __init__(self, email, db_manager, **kwargs):
         super(ActiveUser, self).__init__(email, db_manager)
 
-        for key in ('user_id'):
+        for key in ('user_id', 'email'):
                 if key not in kwargs:
                     raise ValueError('%s not found in arguments' % key)
         self.is_pending = False
