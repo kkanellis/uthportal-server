@@ -192,14 +192,13 @@ class PendingUser(BaseUser):
         return self._sg.send(message)
 
 class ActiveUser(BaseUser):
-    def __init__(self, settings, db_manager, **kwargs):
-        super(ActiveUser, self).__init__(settings, db_manager)
+    def __init__(self, settings, db_manager, info):
+        super(ActiveUser, self).__init__(settings, db_manager, info)
 
-        for key in ('user_id', 'email'):
-                if key not in kwargs:
+        for key in ('auth_id', 'email'):
+                if key not in info:
                     raise ValueError('%s not found in arguments' % key)
         self.is_pending = False
-        self.user_id = kwargs['user_id']
 
-    def authenticate(self, user_id):
-        return is_equal(self.info['user_id'], user_id)
+    def authenticate(self, auth_id):
+        return is_equal(self.info['auth_id'], auth_id)

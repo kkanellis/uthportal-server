@@ -34,14 +34,16 @@ class BSONEncoderEx(JSONEncoder):
             return JSONEncoder.default(self, obj, **kwargs)
 
 def is_equal(a, b):
+    a = str(a)
+    b = str(b)
     if len(a) != len(b):
         return False
 
     result = 0
     for x, y in zip(a, b):
-        result |= x ^ y
+        result |= ord(x) ^ ord(y)
     return result == 0
-    
+
 def get_first_n_digits(integer, digits):
     import math
     digits -= 1
