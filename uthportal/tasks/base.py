@@ -167,6 +167,7 @@ class BaseTask(object):
 
                             if new_entries:
                                 differ = True
+                                notify = False
                                 for entry in new_entries:
                                     assert ('date' in entry and 'has_time' in entry)
 
