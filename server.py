@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from uthportal.database.mongo import MongoDatabaseManager
 from uthportal.configure import Configuration
 from uthportal.logger import get_logger
-from uthportal.users import  UserControl
+from uthportal.users import  UserManager
 from uthportal.util import BSONEncoderEx
 
 HTTPCODE_NOT_FOUND = 404
@@ -41,7 +41,7 @@ app.json_encoder = BSONEncoderEx
 db_manager = None
 settings = None
 logger = None
-user_control = None
+user_manager = None
 
 @app.errorhandler(HTTPCODE_NOT_FOUND)
 def page_not_found(error):
@@ -59,7 +59,7 @@ def db_collection(collection):
 
 @app.route('/api/v1/users/activate', methods=['GET'])
 def activate():
-    global db_manager, logger, settings, user_control
+    global db_manager, logger, settings, user_manager
 
     token = flask.request.args.get('token')
     email = flask.request.args.get('email')
@@ -94,7 +94,7 @@ def activate():
 
 @app.route('/api/v1/users/register', methods=['POST'])
 def register():
-    global db_manager, logger, settings, user_control
+    global db_manager, logger, settings, user_manager
 
     email = flask.request.args.get('email')
     if email == None:
@@ -117,11 +117,11 @@ def register():
         if user == None:
             logger.debug('[%s] no pending user found with this email' % email)
             #no pending user found. We have a valid application
-            (userid, token) = user_control.generate_and_check()
+            (userid, token) = user_manager.generate_and_check()
             logger.debug('[{0}] -> generated userid:{1}, token {2}'.format(email, userid, token))
 
             #Send activation email
-            (status, msg) = user_control.send_activation_email(email, userid, token)
+            (status, msg) = user_manager.send_activation_email(email, userid, token)
             logger.debug('SendGrid response: [{0}] -> {1}'.format(status, msg))
 
             if int(status) < 400 :
@@ -146,7 +146,7 @@ def register():
                     logger.error('KeyError: %s' % key_error)
                     return json_error(HTTPCODE_SERVICE_UNAVAILABLE, 'Service unavailable')
 
-                (status, msg) = user_control.send_activation_email(email, userid, token)
+                (status, msg) = user_manager.send_activation_email(email, userid, token)
                 logger.debug('SendGrid response: [{0}] -> {1}'.format(status, msg))
                 #increment n of tries
                 if int(status) < 400 :
@@ -233,7 +233,8 @@ def remove_keys(document, keys):
     return document
 
 def main():
-    global db_manager, settings, logger, app, user_control
+    global db_manager, settings, logger, app, user_manager
+
     settings = Configuration().get_settings()
     logger = get_logger('server', settings)
 
@@ -241,7 +242,7 @@ def main():
     db_manager = MongoDatabaseManager(settings)
     db_manager.connect()
 
-    user_control = UserControl(settings, db_manager)
+    user_manager = UserManager(settings, db_manager)
 
     server_settings = settings['server']
     app.run(host = server_settings['host'], port = server_settings['port'])
