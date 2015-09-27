@@ -1,10 +1,21 @@
 import uuid
 from abc import ABCMeta
 
-import sendgrid
+
+from sendgrid import SendGridError, SendGridClient, Mail
 
 from logger import get_logger
 from util import get_first_n_digits, is_equal
+
+
+class RegistrationError(Exception):
+    def __init__(self, message):
+        super(RegistrationError, self).__init__(message)
+
+class NetworkError(Exception):
+    def __init__(self, message, code):
+        super(NetworkError, self).__init__(message)
+        self.code = code
 
 class UserManager(object):
     def __init__(self, settings, db_manager):
@@ -54,7 +65,7 @@ class UserManager(object):
         """
         if email in self.users.pending or email in self.users.active:
             #already registered or active user
-            return None
+            raise RegistrationError('User already registered')
 
         (auth_id, token) = self.generate_unique_pair()
         user_info = {
@@ -87,6 +98,7 @@ class BaseUserCollection(object):
     def __init__(self, settings, db_manager):
         self.db_manager = db_manager
         self.settings = settings
+        self.logger = get_logger(self._collection.replace('.', '-'), settings)
 
     def __getitem__(self, email):
         """
@@ -96,7 +108,7 @@ class BaseUserCollection(object):
         if not user_info:
             raise KeyError('User not found')
 
-        return self._children_class(self.settings, self.db_manager, user_info)
+        return self._children_class(self.settings, self.db_manager, self.logger, user_info)
 
     def __delitem__(self, email):
         result = self.db_manager.remove_document(self._collection, {'email': email})
@@ -118,16 +130,16 @@ class BaseUserCollection(object):
 
 class ActiveUsers(BaseUserCollection):
     def __init__(self, settings, db_manager):
-        super(ActiveUsers, self).__init__(settings, db_manager)
         self._collection = 'users.active'
         self._children_class = ActiveUser
+        super(ActiveUsers, self).__init__(settings, db_manager)
 
 
 class PendingUsers(BaseUserCollection):
     def __init__(self, settings, db_manager):
-        super(PendingUsers, self).__init__(settings, db_manager)
-        self._collection = 'users.pending'
         self._children_class = PendingUser
+        self._collection = 'users.pending'
+        super(PendingUsers, self).__init__(settings, db_manager)
 
 
 ################################################################################
@@ -138,14 +150,15 @@ class PendingUsers(BaseUserCollection):
 
 class BaseUser(object):
     __metaclass__ = ABCMeta
-    def __init__(self, settings, db_manager, info):
+    def __init__(self, settings, db_manager, logger, info):
         self.settings = settings
         self.db_manager = db_manager
         self.info = info
+        self.logger = logger
 
 class PendingUser(BaseUser):
-    def __init__(self, settings, db_manager, info):
-        super(PendingUser, self).__init__(settings, db_manager, info)
+    def __init__(self, settings, db_manager, logger, info):
+        super(PendingUser, self).__init__(settings, db_manager, logger, info)
         self.is_pending = True #TODO:needed?
 
         for key in ('token', 'tries', 'auth_id', 'email'):
@@ -157,7 +170,7 @@ class PendingUser(BaseUser):
         username = email_settings['username']
         password = email_settings['password']
 
-        self._sg = sendgrid.SendGridClient(username, password)
+        self._sg = SendGridClient(username, password, raise_errors=True)
         self._email_from = settings['email']['from']
         self._domain = settings['server']['domain']
 
@@ -173,7 +186,7 @@ class PendingUser(BaseUser):
             return False
 
     def send_activation_mail(self):
-        message = sendgrid.Mail()
+        message = Mail()
         message.add_to(self.info['email'])
         message.set_subject('UthPortal activation')
         address = self.info['email']
@@ -190,11 +203,15 @@ class PendingUser(BaseUser):
             .format(self._domain, address, token, auth_id))
         message.set_text('Token: {0}, 8-digit: {1}'.format(token, auth_id))
         message.set_from('UthPortal <%s>' % self._email_from)
-        return self._sg.send(message)
+        try:
+            self._sg.send(message)
+        except SendGridError as error:
+            self.logger.error('SendGrid error: ' + error.args[1])
+            raise NetworkError('Cannot send email.' + error.args[1], error.args[0])
 
 class ActiveUser(BaseUser):
-    def __init__(self, settings, db_manager, info):
-        super(ActiveUser, self).__init__(settings, db_manager, info)
+    def __init__(self, settings, db_manager, logger, info):
+        super(ActiveUser, self).__init__(settings, db_manager,  logger, info)
 
         for key in ('auth_id', 'email'):
                 if key not in info:

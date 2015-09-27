@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import unittest
 import os
 
-from uthportal.users import UserManager
+from uthportal.users import UserManager, NetworkError
 from uthportal.configure import Configuration
 from uthportal.logger import get_logger
 from uthportal.database.memory import MemoryDatabaseManager
@@ -24,8 +24,10 @@ class TestUsersManager(unittest.TestCase):
 
     def routine(self):
         self.logger.info('Creating user test@uth.gr')
-        response = self.user_manager.register_new_user('test@uth.gr')
-        self.assertEqual(response[0], 400) #sendgrid must answer with wrong password
+        try:
+            response = self.user_manager.register_new_user('test@uth.gr')
+        except NetworkError as error:
+            self.assertEqual(error.code, 400)
 
         self.logger.info('Searching in database for this new user')
         self.assertTrue('test@uth.gr' in self.user_manager.users.pending)
@@ -63,11 +65,15 @@ class TestUsersManager(unittest.TestCase):
 
         #
         self.logger.info('Creating user special@uth.gr')
-        response = self.user_manager.register_new_user('special@uth.gr')
-        self.assertEqual(response[0], 400) #sendgrid must answer with wrong password
+
+        try:
+            response = self.user_manager.register_new_user('special@uth.gr')
+        except NetworkError as error:
+            self.assertEqual(error.code, 400)
+
         user = self.user_manager.users.pending['special@uth.gr']
         self.assertFalse(user.activate("asdasd"))
-        #TODO: add more    
+        #TODO: add more
 
 
     def test_usersmanager(self):
