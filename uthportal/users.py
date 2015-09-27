@@ -6,13 +6,6 @@ import sendgrid
 from logger import get_logger
 from util import get_first_n_digits, is_equal
 
-def generate_auth_pair() :
-   """
-   Generates a (user id, activation token) pair
-   """
-   userid = uuid.uuid4()
-   return (get_first_n_digits(userid.int, 8), str(userid))
-
 class UserManager(object):
     def __init__(self, settings, db_manager):
         self.db_manager = db_manager
@@ -39,10 +32,18 @@ class UserManager(object):
         return self.is_token_available(token) and \
             self.is_auth_id_available(auth_id)
 
+    @staticmethod
+    def generate_auth_pair():
+       """
+       Generates a (user id, activation token) pair
+       """
+       userid = uuid.uuid4()
+       return (get_first_n_digits(userid.int, 8), str(userid))
+
     def generate_unique_pair(self):
-        (auth_id, token) = generate_auth_pair()
+        (auth_id, token) = self.generate_auth_pair()
         while not self.is_activation_pair_available(auth_id, token):
-            (auth_id, token) = generate_auth_pair()
+            (auth_id, token) = self.generate_auth_pair()
         return (auth_id, token)
 
     def register_new_user(self, email):
