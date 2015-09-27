@@ -12,7 +12,7 @@ ENV_DIR=$1
 
 #If argument is unset or empty, use defualt 'venv'
 if [ -z "$ENV_DIR" ]; then
-    ENV_DIR="venv"
+    ENV_DIR="uthportal-env"
 fi
 
 #Check if dir exists
