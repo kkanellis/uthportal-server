@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from uthportal.database.mongo import MongoDatabaseManager
 from uthportal.configure import Configuration
 from uthportal.logger import get_logger
-from uthportal.users import  UserManager
+from uthportal.users import  UserManager, RegistrationError, NetworkError, ActivationError
 from uthportal.util import BSONEncoderEx
 
 HTTPCODE_NOT_FOUND = 404
@@ -28,6 +28,8 @@ query_type = {
         'food': 'city',
         'inf': 'type'
 }
+
+ALLOWED_DOMAINS = ['uth.gr', 'inf.uth.gr']
 
 app =  flask.Flask(__name__)
 
@@ -52,7 +54,22 @@ def not_implemented(error):
     return json_error(HTTPCODE_NOT_IMPLEMENTED,'Not implemented')
 
 def json_error(code, message):
-    return flask.jsonify( {'error': {'code': code, 'message': message} } ), code
+    return flask.jsonify(
+        {'response': {
+            'code': code,
+            'message': message,
+            'type': 'ERROR'
+            }
+        }), code
+
+def json_ok(message):
+    return flask.jsonify(
+        {'response': {
+            'code': 200,
+            'message': message,
+            'type': 'OK'
+            }
+        }), 200
 
 def db_collection(collection):
     return 'server.' + collection
@@ -70,27 +87,16 @@ def activate():
         email, token)
     )
 
-    user = db_manager.find_document('users.pending', {'email' : email})
-    if user is None:
+    if email not in user_manager.users.pending:
         return 'No pending user with this email', HTTPCODE_BAD_REQUEST
 
-    if user['token'] == token:
-        #Correct token for this email address
-        db_manager.update_document(
-                'users.pending',
-                {'_id': user['_id']},
-                {'$unset': {'token': 1, 'tries': 1 }}
-        )
-
-        #get sanitized document
-        user = db_manager.find_document('users.pending', {'_id': user['_id']})
-        db_manager.insert_document('users.active', user)
-        db_manager.remove_document('users.pending', {'_id': user['_id']})
-
+    user = user_manager.users.pending[email]
+    try:
+        user.activate(token)
         logger.info('User activated successfully :%s' % email)
         return 'User activated successfully', 200
-    else:
-        return 'Bad token.', HTTPCODE_BAD_REQUEST
+    except ActivationError as error:
+        return error.message, error.code
 
 @app.route('/api/v1/users/register', methods=['POST'])
 def register():
@@ -106,65 +112,24 @@ def register():
     if match == None:
         return json_error(HTTPCODE_BAD_REQUEST, 'Bad email address')
 
+    #check if this address has a uth domain
     email_domain = match.group(1)
-    if not (email_domain == 'uth.gr' or email_domain == 'inf.uth.gr'):
+    if not email_domain in ALLOWED_DOMAINS:
         return  json_error(HTTPCODE_BAD_REQUEST, 'Bad email domain: ' + email_domain)
 
-    user = db_manager.find_document('users.active', {'email': email})
-    if user == None:
-       #no active user found
-        user = db_manager.find_document('users.pending', {'email': email})
-        if user == None:
-            logger.debug('[%s] no pending user found with this email' % email)
-            #no pending user found. We have a valid application
-            (userid, token) = user_manager.generate_and_check()
-            logger.debug('[{0}] -> generated userid:{1}, token {2}'.format(email, userid, token))
-
-            #Send activation email
-            (status, msg) = user_manager.send_activation_email(email, userid, token)
-            logger.debug('SendGrid response: [{0}] -> {1}'.format(status, msg))
-
-            if int(status) < 400 :
-                #email sent, register this user as pending
-                db_manager.insert_document('users.pending',
-                { 'email' : email, 'userid': userid, 'token': token, 'tries': 1 })
-                logger.info("User: %s, registered successfully." % email)
-                return flask.jsonify( {'message' : "Confirmation email with activation link sent."})
-            else:
-                logger.error("[SendGrid] -> %s" % msg)
-                #email service returned an error
-                return json_error(HTTPCODE_SERVICE_UNAVAILABLE, 'Email service unavailable')
-        else:
-            #there is already a pending user
-            tries = user['tries']
-            logger.info('[{0}][PENDING] resend requested, tries: {1}'.format(email, tries))
-            if (tries < settings['email']['max_tries']):
-                try:
-                    userid = user['userid']
-                    token = user['token']
-                except KeyError as key_error:
-                    logger.error('KeyError: %s' % key_error)
-                    return json_error(HTTPCODE_SERVICE_UNAVAILABLE, 'Service unavailable')
-
-                (status, msg) = user_manager.send_activation_email(email, userid, token)
-                logger.debug('SendGrid response: [{0}] -> {1}'.format(status, msg))
-                #increment n of tries
-                if int(status) < 400 :
-                    db_manager.update_document('users.pending',{'_id': user['_id']},
-                        {'$inc' :{'tries' : 1}})
-                    logger.info("Activation mail re-sent to user: %s" % email)
-                    return flask.jsonify( {'message' : "Confirmation email with activation link sent."} )
-                else:
-                    logger.error("[SendGrid] -> %s" % msg)
-                    #email service returned an error
-                    return json_error(HTTPCODE_SERVICE_UNAVAILABLE, 'Email service unavailable')
-            else:
-                return json_error(HTTPCODE_TOO_MANY_REQUESTS, 'Max code resend tries exceeded.')
+    if not email in user_manager.users.pending:
+        try:
+            user_manager.register_new_user(email)
+            logger.info('User [%s] registered successfuly. Activation mail sent!' % email)
+            return json_ok('Activation email sent!')
+        except RegistrationError as error:
+            return json_error(HTTPCODE_BAD_REQUEST, error.message)
+        except NetworkError as error:
+            #this means our user is stored in the database, but we can't send
+            #activation email
+            return json_error(error.code, error.message + "Issue an email resend request later.")
     else:
-        #user is active
-        return  json_error(HTTPCODE_BAD_REQUEST, 'An active user with this email already exists!')
-
-    return json_error(HTTPCODE_BAD_REQUEST, 'Failed')
+        return json_error(HTTPCODE_BAD_REQUEST, 'User already registered.')
 
 @app.route('/api/v1/info/<path:url>', methods=['GET'])
 def get_info(url):

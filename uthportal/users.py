@@ -12,6 +12,11 @@ class RegistrationError(Exception):
     def __init__(self, message):
         super(RegistrationError, self).__init__(message)
 
+class ActivationError(Exception):
+    def __init__(self, message, code=0):
+        super(ActivationError, self).__init__(message)
+        self.code = code
+
 class NetworkError(Exception):
     def __init__(self, message, code):
         super(NetworkError, self).__init__(message)
@@ -77,7 +82,7 @@ class UserManager(object):
         result = self.users.pending.append(user_info)
         if result:
             pending_user = self.users.pending[email]
-            return pending_user.send_activation_mail()
+            pending_user.send_activation_mail()
         else:
             return None
 
@@ -175,15 +180,21 @@ class PendingUser(BaseUser):
         self._domain = settings['server']['domain']
 
     def activate(self, token):
+        #TODO: add max tries for abuse protection
         if is_equal(token, self.info['token']):
+            self.logger.debug('[%s] -> valid activation token', self.info['email'])
             #valid activation, retrieve and remove document
             user = self.db_manager.find_document('users.pending', {'email': self.info['email']})
-            self.db_manager.remove_document('users.pending', {'email': self.info['email']})
             #delete unwanted fields
             del user['tries'], user['token']
-            return self.db_manager.insert_document('users.active', user)
+            if not self.db_manager.insert_document('users.active', user):
+                raise ActivationError("Couldn't activate user", 500)
+
+            #this way, if we can't insert user in active collection, he stays
+            # in pending
+            self.db_manager.remove_document('users.pending', {'email': self.info['email']})
         else:
-            return False
+            raise ActivationError('Bad token', 400)
 
     def send_activation_mail(self):
         message = Mail()
@@ -192,10 +203,11 @@ class PendingUser(BaseUser):
         address = self.info['email']
         token = self.info['token']
         auth_id = self.info['auth_id']
+        self.logger.debug('domain: ' + self._domain)
         #TODO: make some proper html
         message.set_html(
             "Please click on the following link to activate your account:\
-            <a href={0}/api/v1/activate?email={1}&token={2}>Activate</a>, \
+            <a href={0}/api/v1/users/activate?email={1}&token={2}>Activate</a>, \
             This is your 8-digit unique user id: {3}\
             Use this in your app, when asked for it.\
             This id is used to personalize your push notifications.\
@@ -206,8 +218,17 @@ class PendingUser(BaseUser):
         try:
             self._sg.send(message)
         except SendGridError as error:
-            self.logger.error('SendGrid error: ' + error.args[1])
-            raise NetworkError('Cannot send email.' + error.args[1], error.args[0])
+            self.logger.error('SendGrid error: ' + str(error))
+            raise NetworkError("Cannot send activation-email.", 500)
+        except SendGridClientError as error:
+            self.logger.error('SendGrid CLIENT error: ' + error.args[1])
+            raise NetworkError('Cannot send activation e-mail.', 500)
+        except SendGridServerError as error:
+            self.logger.error('SendGrid SERVER error: [{0}] -> [{1}] ',format(
+                error.args[0],
+                error.args[1]
+            ))
+            raise NetworkError('Mail server currently un-available', 503)
 
 class ActiveUser(BaseUser):
     def __init__(self, settings, db_manager, logger, info):
