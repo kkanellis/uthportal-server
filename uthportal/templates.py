@@ -3,20 +3,20 @@
 
 event_templates = {
         'inf.announce': {
-            'title.gr': '${var.name}',
-            'msg.gr': 'Νέα ανακοίνωση!'
+            'title.gr': u'${var.name}',
+            'msg.gr': u'Νέα ανακοίνωση!'
         },
         'inf.courses': {
-            'title.gr': '${var.name}',
-            'msg.gr': '${var.code_site}: Νέα ανακοίνωση!'
+            'title.gr': u'${var.info.name}',
+            'msg.gr': u'${var.info.code_site}: Νέα ανακοίνωση!'
         },
         'uth.announce': {
-            'title.gr': '${var.name}',
-            'msg.gr': 'Νέα ανακοίνωση!'
+            'title.gr': u'${var.name}',
+            'msg.gr': u'Νέα ανακοίνωση!'
         },
         'uth.food': {
-            'title.gr': 'Μενού Λέσχης',
-            'msg.gr': 'Ενημέρωθηκε ${var.date}'
+            'title.gr': u'Μενού Λέσχης',
+            'msg.gr': u'Νέο μενού λέσχης διαθέσιμο!'
         }
 }
 
