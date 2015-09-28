@@ -14,7 +14,7 @@ from uthportal.util import truncate_str
 class BaseTask(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, path, settings, database_manager, **kwargs):
+    def __init__(self, path, settings, database_manager, pushd_client, **kwargs):
         self.settings = settings
         self.path = path
         self.id = path.split('.')[-1]
@@ -23,6 +23,7 @@ class BaseTask(object):
 
         self.timeout = self.settings['network']['timeout']
         self.database_manager = database_manager
+        self.pushd_client = pushd_client
 
         self.db_collection = '.'.join( path.split('.')[:-1] )
 
@@ -130,7 +131,6 @@ class BaseTask(object):
             self.transmit()
 
             if should_notify:
-                self.logger.debug('Notifing clients...')
                 self.notify()
         else:
             self.logger.debug('No new entries found')
@@ -215,7 +215,35 @@ class BaseTask(object):
         return (data_differ, should_notify)
 
     def notify(self):
-        pass
+        self.logger.debug('Notifing clients...')
+        event_name = self.path
+
+        data = {
+            'event': event_name
+        }
+
+        var = { }
+        if hasattr(self, 'notify_fields'):
+            var = {
+                field: self._get_document_field(self.document, field)
+                for field in self.notify_fields
+            }
+
+            if not all(var.values()):
+                self.logger.warning('notify: some var values are None')
+
+        success = False
+        try:
+            success = self.pushd_client.events[event_name].send(data, var=var)
+        except KeyError:
+            self.logger.error('No valid event template exists. Notification NOT sent!')
+        except ValueError:
+            self.logger.error('Event name is empty/None. Notification NOT sent!')
+
+        if success:
+            self.logger.info('Notification send!')
+        else:
+            self.logger.error('Notification NOT send! Check notifier logs')
 
     def post_process(self):
         pass
