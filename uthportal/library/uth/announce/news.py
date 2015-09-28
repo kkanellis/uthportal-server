@@ -5,6 +5,7 @@ from uthportal.tasks.rss_announcement import RssAnnouncementTask
 
 class news(RssAnnouncementTask):
     document_prototype = {
+        'name': 'Νέα',
         'type': 'news',
         'link': 'http://www.uth.gr/news?format=feed&type=rss'
     }
