@@ -54,7 +54,7 @@ class UserManager(object):
        Generates a (user id, activation token) pair
        """
        userid = uuid.uuid4()
-       return (get_first_n_digits(userid.int, 8), str(userid))
+       return (str(userid.int)[:8], str(userid))
 
     def generate_unique_pair(self):
         (auth_id, token) = self.generate_auth_pair()
@@ -124,6 +124,10 @@ class BaseUserCollection(object):
         #TODO: this is supposed to edit the user
         if not isinstance(user, self._children_class):
             raise KeyError('Invalid user type')
+        #Brute force approach. Delete everything and insert new
+        #TODO: Maybe comapre info and issue an update/modify
+        #db request.
+        self.__delitem__(email)
         self.db_manager.insert_document(self._collection, user.info)
 
     def __contains__(self, email):
@@ -161,10 +165,16 @@ class BaseUser(object):
         self.info = info
         self.logger = logger
 
+    def commit(self):
+        #TODO: lazy way.
+        #Maybe check invidual fields and update them?
+        self.db_manager.remove_document(self._collection, {'email': self.info['email']})
+        self.db_manager.insert_document(self._collection, self.info)
+
 class PendingUser(BaseUser):
     def __init__(self, settings, db_manager, logger, info):
+        self._collection = 'users.pending'
         super(PendingUser, self).__init__(settings, db_manager, logger, info)
-        self.is_pending = True #TODO:needed?
 
         for key in ('token', 'tries', 'auth_id', 'email'):
             if key not in info:
@@ -232,6 +242,7 @@ class PendingUser(BaseUser):
 
 class ActiveUser(BaseUser):
     def __init__(self, settings, db_manager, logger, info):
+        self._collection = 'users.active'
         super(ActiveUser, self).__init__(settings, db_manager,  logger, info)
 
         for key in ('auth_id', 'email'):
