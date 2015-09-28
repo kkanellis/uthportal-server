@@ -22,6 +22,7 @@ HTTPCODE_CREATED = 201
 HTTPCODE_NOT_FOUND = 404
 HTTPCODE_BAD_REQUEST = 400
 HTTPCODE_TOO_MANY_REQUESTS = 429
+HTTPCODE_INTERNAL_SERVER_ERROR = 500
 HTTPCODE_NOT_IMPLEMENTED = 501
 HTTPCODE_SERVICE_UNAVAILABLE = 503
 HTTPCODE_UNAUTHORIZED = 401
@@ -300,6 +301,49 @@ def user_get_events():
             return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Subscription service unavaiilable")
     else:
         logger.info('Pushd [%s] -> user trying to get events w.o being subscribed' % args['email'])
+        return json_error(HTTPCODE_BAD_REQUEST, "User not subscribed for notifications")
+
+
+@app.route('/api/v1/users/push/event/<path:event>', methods =['GET', 'POST', 'DELETE'])
+def user_event(event):
+    global db_manager, logger, settings, user_manager, pushd_client
+    required_args = ['auth_id', 'email']
+    try:
+        args = check_args(flask.request.args.items(), required_args)
+    except ValueError as error:
+        return json_error(HTTPCODE_BAD_REQUEST, error.message)
+
+    if args['email'] not in user_manager.users.active:
+        return json_error(HTTPCODE_BAD_REQUEST, 'User not found')
+
+    user = user_manager.users.active[args['email']]
+    if not user.authenticate(args['auth_id']):
+        return json_error(HTTPCODE_UNAUTHORIZED, 'Bad authentication details.')
+
+    if not pushd_client.is_alive():
+        logger.warn('PUSHD service is DOWN!')
+        return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Push service unavailable!")
+
+    if args['email'] in pushd_client.users:
+        user = pushd_client.users[args['email']]
+        method = flask.request.method
+        if method == 'GET':
+            result = user.is_subscribed_to(event)
+            return flask.jsonify({'result': bool(result)}), 200
+        elif method == 'POST':
+            result = user.subscribe(event)
+            if result:
+                return json_ok('Subscribed to event successfully.')
+            else:
+                return json_error(HTTPCODE_BAD_REQUEST, 'Cannot complete request')
+        elif method == 'DELETE':
+            result = user.unsubscribe(event)
+            if result:
+                return json_ok('UnSubscribed from event successfully.')
+            else:
+                return json_error(HTTPCODE_BAD_REQUEST, "Not subscribed to this event")
+    else:
+        logger.info('Pushd [%s] -> event operation request w.o being subscribed.' % args['email'])
         return json_error(HTTPCODE_BAD_REQUEST, "User not subscribed for notifications")
 
 @app.route('/api/v1/info/<path:url>', methods=['GET'])

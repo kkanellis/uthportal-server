@@ -26,6 +26,9 @@ base_api = {
 api = { }
 logger = None
 
+#TODO:add some proper mechanism eg. exceptions to let
+#other modules knwo what is happening
+
 class PushdClient(object):
     def __init__(self, settings, db_manager, event_templates):
         global logger
@@ -285,7 +288,7 @@ class PushdUser(object):
         response = http_request(url, method)
 
         if not response:
-            return None
+            return False
 
         if response.status_code == 200:
             return True
