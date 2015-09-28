@@ -10,8 +10,8 @@ class StaticTask(BaseTask):
     update_fields = ['entries']
     db_query_format = { 'type': 'id' }
 
-    def __init__(self, path, settings, database_manager, **kwargs):
-        super(StaticTask, self).__init__(path, settings, database_manager)
+    def __init__(self, path, settings, database_manager, pushd_client, **kwargs):
+        super(StaticTask, self).__init__(path, settings, database_manager, pushd_client)
 
     def parse(self, bsoup):
         """ Parse the fetced document """

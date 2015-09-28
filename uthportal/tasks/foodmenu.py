@@ -16,8 +16,8 @@ class FoodmenuTask(BaseTask):
 
     weekdays = [ 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή' ]
 
-    def __init__(self, path, settings, database_manager):
-        super(FoodmenuTask, self).__init__(path, settings, database_manager)
+    def __init__(self, path, settings, database_manager, pushd_client):
+        super(FoodmenuTask, self).__init__(path, settings, database_manager, pushd_client)
 
     def update(self):
         # Finding the date of the latest monday
