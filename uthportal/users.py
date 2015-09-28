@@ -1,7 +1,6 @@
 import uuid
 from abc import ABCMeta
 
-
 from sendgrid import SendGridError, SendGridClient, Mail
 
 from logger import get_logger

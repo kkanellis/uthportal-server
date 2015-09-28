@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from json import JSONEncoder
 from operator import itemgetter
 import re
+import json
 
 import flask
 import sendgrid
@@ -15,7 +16,9 @@ from uthportal.logger import get_logger
 from uthportal.users import  UserManager, RegistrationError, NetworkError, ActivationError
 from uthportal.notifier import PushdClient
 from uthportal.util import BSONEncoderEx
+from uthportal.templates import event_templates
 
+HTTPCODE_CREATED = 201
 HTTPCODE_NOT_FOUND = 404
 HTTPCODE_BAD_REQUEST = 400
 HTTPCODE_TOO_MANY_REQUESTS = 429
@@ -63,13 +66,13 @@ def json_error(code, message):
             }
         }), code
 
-def json_ok(message):
+def json_ok(message, code = 200):
     return flask.jsonify(
         {'response': {
-            'code': 200,
+            'code': code,
             'message': message,
             }
-        }), 200
+        }), code
 
 def db_collection(collection):
     return 'server.' + collection
@@ -144,7 +147,7 @@ def check_args(flask_args, required_args):
 
 @app.route('/api/v1/users/push/update', methods=['POST'])
 def update():
-    global db_manager, logger, settings, user_manager
+    global db_manager, logger, settings, user_manager, pushd_client
     required_args = ['device_token', 'auth_id', 'email', 'protocol']
     try:
         args = check_args(flask.request.args.items(), required_args)
@@ -158,6 +161,10 @@ def update():
     if not user.authenticate(args['auth_id']):
         return json_error(HTTPCODE_UNAUTHORIZED, 'Bad authentication details.')
 
+    if not pushd_client.is_alive():
+        logger.warn('PUSHD service is DOWN!')
+        return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Notification service unavailable!")
+
     if user.info['token'] != args['device_token']:
         logger.info('Pushd [%s] -> token change detected' % args['email'])
         #user reports a changed device_token
@@ -167,7 +174,7 @@ def update():
         user.commit()
 
         #remove this user from pushd
-        pushd_client.unregister(args['email'])
+        pushd_client.users.unregister(args['email'])
 
     if not pushd_client.users.update(args['email']):
         logger.info('Pushd [%s] -> not found in pushd db' % args['email'])
@@ -177,15 +184,123 @@ def update():
             args['device_token']
             #TODO: etc
         )
+        logger.warn(result)
         if result:
             user = user_manager.users.active[args['email']]
             user.info['pushd_id'] = result
             user.commit()
             return json_ok('User subscription updated successfully.')
         else:
-            return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Subsciption service unavaiilable")
+            logger.warn('Pushd service might be down.')
+            return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Push service unavaiilable")
     else:
         return json_ok('User subscription updated successfully.')
+
+@app.route('/api/v1/users/push/unsubscribe', methods=['POST'])
+def unsubscribe():
+    global db_manager, logger, settings, user_manager, pushd_client
+    required_args = ['auth_id', 'email']
+    try:
+        args = check_args(flask.request.args.items(), required_args)
+    except ValueError as error:
+        return json_error(HTTPCODE_BAD_REQUEST, error.message)
+
+    if args['email'] not in user_manager.users.active:
+        return json_error(HTTPCODE_BAD_REQUEST, 'User not found')
+
+    user = user_manager.users.active[args['email']]
+    if not user.authenticate(args['auth_id']):
+        return json_error(HTTPCODE_UNAUTHORIZED, 'Bad authentication details.')
+
+    if not pushd_client.is_alive():
+        logger.warn('PUSHD service is DOWN!')
+        return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Push service unavailable!")
+
+    if args['email'] in pushd_client.users:
+        if pushd_client.users.unregister(args['email']):
+            logger.info('Pushd [%s] -> deleted from push service' % args['email'])
+            del user.info['pushd_id']
+            user.commit()
+            return json_ok('User subscription removed successfully.')
+        else:
+            logger.warn('Pushd service might be down.')
+            return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Subsciption service unavaiilable")
+    else:
+        logger.info('Pushd [%s] -> user trying to unsubscibe w.o being subscribed' % args['email'])
+        return json_error(HTTPCODE_BAD_REQUEST, "User not subscribed for notifications")
+
+@app.route('/api/v1/users/push/events', methods =['POST'])
+def user_set_events():
+    global db_manager, logger, settings, user_manager, pushd_client
+    required_args = ['auth_id', 'email', 'events']
+    try:
+        args = check_args(flask.request.args.items(), required_args)
+    except ValueError as error:
+        return json_error(HTTPCODE_BAD_REQUEST, error.message)
+
+    try:
+        args['events'] = json.loads(args['events'])
+        event_list = args['events']['list']
+    except Exception as ex:
+        return json_error(HTTPCODE_BAD_REQUEST, ex.message)
+
+    if args['email'] not in user_manager.users.active:
+        return json_error(HTTPCODE_BAD_REQUEST, 'User not found')
+
+    user = user_manager.users.active[args['email']]
+    if not user.authenticate(args['auth_id']):
+        return json_error(HTTPCODE_UNAUTHORIZED, 'Bad authentication details.')
+
+    if not pushd_client.is_alive():
+        logger.warn('PUSHD service is DOWN!')
+        return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Push service unavailable!")
+
+
+    if args['email'] in pushd_client.users:
+        user = pushd_client.users[args['email']]
+        if user.set_subscriptions(event_list):
+            return json_ok('User subscribtions edited successfully.')
+        else:
+            logger.warn('Pushd service might be down.')
+            return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Subsciption service unavaiilable")
+    else:
+        logger.info('Pushd [%s] -> user trying to edit events w.o being subscribed' % args['email'])
+        return json_error(HTTPCODE_BAD_REQUEST, "User not subscribed for notifications")
+
+
+@app.route('/api/v1/users/push/events', methods =['GET'])
+def user_get_events():
+    global db_manager, logger, settings, user_manager, pushd_client
+    required_args = ['auth_id', 'email']
+    try:
+        args = check_args(flask.request.args.items(), required_args)
+    except ValueError as error:
+        return json_error(HTTPCODE_BAD_REQUEST, error.message)
+
+    if args['email'] not in user_manager.users.active:
+        return json_error(HTTPCODE_BAD_REQUEST, 'User not found')
+
+    user = user_manager.users.active[args['email']]
+    if not user.authenticate(args['auth_id']):
+        return json_error(HTTPCODE_UNAUTHORIZED, 'Bad authentication details.')
+
+    if not pushd_client.is_alive():
+        logger.warn('PUSHD service is DOWN!')
+        return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Push service unavailable!")
+
+    if args['email'] in pushd_client.users:
+        subscribed_events =  {}
+        user = pushd_client.users[args['email']]
+        result = user.get_subscriptions()
+        if result is not None:
+            subscribed_events['list'] = result
+            return flask.jsonify(subscribed_events), 200
+        else:
+            logger.warn('Pushd service might be down.')
+            return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Subscription service unavaiilable")
+    else:
+        logger.info('Pushd [%s] -> user trying to get events w.o being subscribed' % args['email'])
+        return json_error(HTTPCODE_BAD_REQUEST, "User not subscribed for notifications")
 
 @app.route('/api/v1/info/<path:url>', methods=['GET'])
 def get_info(url):
@@ -264,7 +379,7 @@ def main():
     db_manager.connect()
 
     user_manager = UserManager(settings, db_manager)
-    pushd_client = PushdClient(settings, db_manager, {})
+    pushd_client = PushdClient(settings, db_manager, event_templates)
 
     server_settings = settings['server']
     app.run(host = server_settings['host'], port = server_settings['port'])

@@ -272,7 +272,6 @@ class PushdUser(object):
 
         return False
 
-
     def is_subscribed_to(self, event_name):
         """
         Checks if user is subscribed to event_name
@@ -338,6 +337,7 @@ class PushdUser(object):
         response = http_request(url, method)
 
         if not response:
+            logger.warn('Empty response')
             return None
 
         if response.status_code == 200:
@@ -354,14 +354,34 @@ class PushdUser(object):
 
 
     def set_subscriptions(self, events):
-        # TODO
-        pass
+        (url, method) = api['user.set_subscriptions']
+        url = url.format( **{
+            'pushd_id': self.pushd_id,
+        })
+        payload = {}
+
+        for event in events:
+            payload[event] = {"ignore_message": False}
+
+        response = http_request(url, method, json=payload)
+
+        if not response:
+            return None
+
+        if response.status_code == 200 or response.status_code == 204:
+            return True
+        if response.status_code == 404:
+            logger.error('User [id=%s] does not exist' % self.pushd_id)
+        else:
+            logger.error('Request returned [%s]' % response.status_code)
+
+        return False
 
 class PushdEvents(object):
     def __init__(self, event_templates):
         for key in event_templates.keys():
             template = event_templates[key]
-            if ('title' not in template or 'msg' not in template):
+            if ('title.gr' not in template or 'msg.gr' not in template):
                 err_str = ' "title" and/or "msg" are missing from "%s" template' % template
                 logger.error(err_str)
                 raise ValueError(err_str)
