@@ -13,6 +13,7 @@ from uthportal.database.mongo import MongoDatabaseManager
 from uthportal.configure import Configuration
 from uthportal.logger import get_logger
 from uthportal.users import  UserManager, RegistrationError, NetworkError, ActivationError
+from uthportal.notifier import PushdClient
 from uthportal.util import BSONEncoderEx
 
 HTTPCODE_NOT_FOUND = 404
@@ -20,6 +21,7 @@ HTTPCODE_BAD_REQUEST = 400
 HTTPCODE_TOO_MANY_REQUESTS = 429
 HTTPCODE_NOT_IMPLEMENTED = 501
 HTTPCODE_SERVICE_UNAVAILABLE = 503
+HTTPCODE_UNAUTHORIZED = 401
 
 DEFAULT_EXCLUDED_FIELDS = [ '_id', 'auth_type' ]
 query_type = {
@@ -44,6 +46,7 @@ db_manager = None
 settings = None
 logger = None
 user_manager = None
+pushd_client = None
 
 @app.errorhandler(HTTPCODE_NOT_FOUND)
 def page_not_found(error):
@@ -54,8 +57,7 @@ def not_implemented(error):
     return json_error(HTTPCODE_NOT_IMPLEMENTED,'Not implemented')
 
 def json_error(code, message):
-    return flask.jsonify(
-        {'response': {
+    return flask.jsonify( {'response': {
             'code': code,
             'message': message,
             }
@@ -143,12 +145,47 @@ def check_args(flask_args, required_args):
 @app.route('/api/v1/users/push/update', methods=['POST'])
 def update():
     global db_manager, logger, settings, user_manager
-    required_args = ['device_token', 'auth_id', 'email']
+    required_args = ['device_token', 'auth_id', 'email', 'protocol']
     try:
         args = check_args(flask.request.args.items(), required_args)
-        return str(args)
     except ValueError as error:
         return json_error(HTTPCODE_BAD_REQUEST, error.message)
+
+    if args['email'] not in user_manager.users.active:
+        return json_error(HTTPCODE_BAD_REQUEST, 'User not found')
+
+    user = user_manager.users.active[args['email']]
+    if not user.authenticate(args['auth_id']):
+        return json_error(HTTPCODE_UNAUTHORIZED, 'Bad authentication details.')
+
+    if user.info['token'] != args['device_token']:
+        logger.info('Pushd [%s] -> token change detected' % args['email'])
+        #user reports a changed device_token
+        #update entry
+        user.info['token'] = args['device_token']
+        #update user info in db
+        user.commit()
+
+        #remove this user from pushd
+        pushd_client.unregister(args['email'])
+
+    if not pushd_client.users.update(args['email']):
+        logger.info('Pushd [%s] -> not found in pushd db' % args['email'])
+        #pushd removed this user or we just updated the token, re-register
+        result = pushd_client.users.register(
+            args['protocol'],
+            args['device_token']
+            #TODO: etc
+        )
+        if result:
+            user = user_manager.users.active[args['email']]
+            user.info['pushd_id'] = result
+            user.commit()
+            return json_ok('User subscription updated successfully.')
+        else:
+            return json_error(HTTPCODE_SERVICE_UNAVAILABLE, "Subsciption service unavaiilable")
+    else:
+        return json_ok('User subscription updated successfully.')
 
 @app.route('/api/v1/info/<path:url>', methods=['GET'])
 def get_info(url):
@@ -217,7 +254,7 @@ def remove_keys(document, keys):
     return document
 
 def main():
-    global db_manager, settings, logger, app, user_manager
+    global db_manager, settings, logger, app, user_manager,pushd_client
 
     settings = Configuration().get_settings()
     logger = get_logger('server', settings)
@@ -227,6 +264,7 @@ def main():
     db_manager.connect()
 
     user_manager = UserManager(settings, db_manager)
+    pushd_client = PushdClient(settings, db_manager, {})
 
     server_settings = settings['server']
     app.run(host = server_settings['host'], port = server_settings['port'])

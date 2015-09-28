@@ -26,14 +26,14 @@ base_api = {
 api = { }
 logger = None
 
-class Pushd(object):
+class PushdClient(object):
     def __init__(self, settings, db_manager, event_templates):
         global logger
 
         self.settings = settings
         self.db_manager = db_manager
 
-        logger = get_logger('notifier', settings)
+        logger = get_logger('pushd-client', settings)
 
         self.users = PushdUsers(db_manager)
         self.events = PushdEvents(event_templates)
@@ -131,7 +131,7 @@ class PushdUsers(object):
 
         This method should be called each time the client app is launched
         """
-        
+
         pushd_id = self._get_pushd_id(email)
         if not pushd_id:
             return False
