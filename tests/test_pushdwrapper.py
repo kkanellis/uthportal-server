@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import unittest
 import os
 
-from uthportal.notifier import Pushd
+from uthportal.notifier import PushdClient
 from uthportal.configure import Configuration
 from uthportal.logger import get_logger
 from uthportal.database.memory import MemoryDatabaseManager
@@ -16,11 +16,11 @@ class TestPushd(unittest.TestCase):
         self.db_manager = MemoryDatabaseManager()
 
         templates = {'very_real_event': {
-                                    'title' : 'test',
-                                    'msg' : 'this is a message, for real'
+                                    'title.gr' : 'test',
+                                    'msg.gr' : 'this is a message, for real'
                                     }
                     }
-        self.pushd = Pushd(self.settings, self.db_manager, templates)
+        self.pushd = PushdClient(self.settings, self.db_manager, templates)
         self.logger = get_logger('test', self.settings)
 
     def routine(self):
@@ -62,3 +62,4 @@ class TestPushd(unittest.TestCase):
         self.assertTrue(self.pushd.users.unregister('test@uth.gr'))
     def test_pusd_wrapper(self):
         self.routine()
+

@@ -1,9 +1,13 @@
+#/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from uthportal.tasks.announcement import AnnouncementTask
 from uthportal.util import parse_greek_date, get_soup
 
 class general(AnnouncementTask):
 
     document_prototype = {
+        'name': u'Γενικές ανακοινώσεις',
         'type': 'general',
         'link': 'http://www.inf.uth.gr/cced/?cat=24'
     }

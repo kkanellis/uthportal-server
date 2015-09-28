@@ -10,11 +10,12 @@ from uthportal.util import fix_urls, get_soup, parse_rss
 class CourseTask(BaseTask):
     task_type = 'CourseTask'
 
-    update_fields =[ 'announcements.site', 'announcements.eclass' ]
+    update_fields = ['announcements.site', 'announcements.eclass']
+    notify_fields = ['info.name', 'info.code_site']
     db_query_format = { 'code' : 'id' }
 
-    def __init__(self, path, settings, database_manager):
-        super(CourseTask, self).__init__(path, settings, database_manager)
+    def __init__(self, path, settings, database_manager, pushd_client):
+        super(CourseTask, self).__init__(path, settings, database_manager, pushd_client)
 
         # Calculate semester of course based on course code
         year, _, spring = self.id[2:]

@@ -12,10 +12,11 @@ class AnnouncementTask(BaseTask):
     task_type = 'AnnouncementTask'
 
     update_fields = ['entries']
+    notify_fields = ['name']
     db_query_format = { 'type': 'id' }
 
-    def __init__(self, path, settings, database_manager, **kwargs):
-        super(AnnouncementTask, self).__init__(path, settings, database_manager)
+    def __init__(self, path, settings, database_manager, pushd_client, **kwargs):
+        super(AnnouncementTask, self).__init__(path, settings, database_manager, pushd_client)
 
         # Check if task needs auth
         if 'auth_type' in self.document:

@@ -9,8 +9,9 @@ from inspect import getmembers, isclass
 from uthportal.configure import Configuration
 from uthportal.logger import get_logger
 from uthportal.database.mongo import MongoDatabaseManager
-#from uthportal.notifier import Notifier
+from uthportal.notifier import PushdClient
 from uthportal.scheduler import Scheduler
+from uthportal.templates import event_templates
 
 
 INFO = {
@@ -35,6 +36,12 @@ class UthPortal(object):
         if not self.db_manager.connect():
             self.logger.info('Exiting...')
             sys.exit(1)
+
+        self.pushd_client = PushdClient(
+                self.settings,
+                self.db_manager,
+                event_templates
+        )
 
         self.load_tasks()
 
@@ -72,7 +79,9 @@ class UthPortal(object):
                         class_name = name
                         instance = obj(current_module.__name__,
                                         self.settings,
-                                        self.db_manager)
+                                        self.db_manager,
+                                        self.pushd_client
+                                        )
 
                 modules = module.split('.')
 

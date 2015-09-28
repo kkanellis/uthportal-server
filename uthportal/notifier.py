@@ -382,14 +382,16 @@ class PushdEvents(object):
         for key in event_templates.keys():
             template = event_templates[key]
             if ('title.gr' not in template or 'msg.gr' not in template):
-                err_str = ' "title" and/or "msg" are missing from "%s" template' % template
+                err_str = ' "title.gr" and/or "msg.gr" are missing from "%s" template' % template
                 logger.error(err_str)
                 raise ValueError(err_str)
+
         self.templates = event_templates
 
     def __getitem__(self, event_name):
         collection = self.__get_collection(event_name)
         logger.info(collection)
+
         if collection in self.templates:
             template = self.templates[collection]
             return PushdEvent(event_name, template)
@@ -463,7 +465,18 @@ class PushdEvent(object):
         (url, method) = api['event.send']
         url = url.format( **{'event_name': self.name})
 
-        response = http_request(url, method)
+        # Construct event template
+        payload = {
+            'data.' + key: value
+            for (key, value) in data.iteritems()
+        }
+        payload.update({
+            'var.' + key: value
+            for (key, value) in var.iteritems()
+        })
+        payload.update(self.template)
+
+        response = http_request(url, method, data=payload)
         if not response:
             return False
 
