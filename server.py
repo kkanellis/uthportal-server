@@ -58,7 +58,6 @@ def json_error(code, message):
         {'response': {
             'code': code,
             'message': message,
-            'type': 'ERROR'
             }
         }), code
 
@@ -67,7 +66,6 @@ def json_ok(message):
         {'response': {
             'code': 200,
             'message': message,
-            'type': 'OK'
             }
         }), 200
 
@@ -103,21 +101,21 @@ def register():
     global db_manager, logger, settings, user_manager
 
     email = flask.request.args.get('email')
-    if email == None:
+    if not email:
         return json_error(HTTPCODE_BAD_REQUEST, 'No email address')
 
     logger.info('User trying to register with email: ' + email)
     match = re.match(r'[^@]+@([^@]+\.[^@]+)', email)
 
-    if match == None:
+    if not match:
         return json_error(HTTPCODE_BAD_REQUEST, 'Bad email address')
 
-    #check if this address has a uth domain
+    #check if this address has a valid domain
     email_domain = match.group(1)
     if not email_domain in ALLOWED_DOMAINS:
         return  json_error(HTTPCODE_BAD_REQUEST, 'Bad email domain: ' + email_domain)
 
-    if not email in user_manager.users.pending:
+    if email not in user_manager.users.pending:
         try:
             user_manager.register_new_user(email)
             logger.info('User [%s] registered successfuly. Activation mail sent!' % email)
@@ -130,6 +128,27 @@ def register():
             return json_error(error.code, error.message + "Issue an email resend request later.")
     else:
         return json_error(HTTPCODE_BAD_REQUEST, 'User already registered.')
+
+def check_args(flask_args, required_args):
+    args = {}
+    given_args = []
+    for arg in flask.request.args.items():
+        given_args.append(arg[0])
+        args[arg[0]] = arg[1]
+    diff = set(required_args).difference(given_args)
+    if len(diff) > 0:
+        raise ValueError('Missing argument(s): ' + ', '.join(str(e) for e in diff))
+    return args
+
+@app.route('/api/v1/users/push/update', methods=['POST'])
+def update():
+    global db_manager, logger, settings, user_manager
+    required_args = ['device_token', 'auth_id', 'email']
+    try:
+        args = check_args(flask.request.args.items(), required_args)
+        return str(args)
+    except ValueError as error:
+        return json_error(HTTPCODE_BAD_REQUEST, error.message)
 
 @app.route('/api/v1/info/<path:url>', methods=['GET'])
 def get_info(url):
