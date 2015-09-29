@@ -112,9 +112,9 @@ class Configuration(object):
 
         except IOError as e:
             self.logger.warn(
-                    "Cannot load config file [{0}]! (Reason: {1}). \
-                    Using default settings".format(CONFIG_FILE, e.strerror))
+                    "Cannot load config file [{0}]! (Reason: {1})".format(CONFIG_FILE, e.strerror))
             self.save_settings()
+            self.logger.warn("Default settings saved to file!")
 
         except:
             self.logger.error("Unexpected error:", sys.exc_info()[0])
