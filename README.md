@@ -9,6 +9,7 @@ UTHPortal is a mobile application (powered by a web-service) which is targeted t
 - **[Flask](http://flask.pocoo.org/)**
 - **[Gevent](http://www.gevent.org/)**
 - **[Gunicorn](http://www.gunicorn.org/)**
+- **[Html5lib](http://github.com/html5lib/html5lib-python)**
 - **[Nginx](http://nginx.org/)**
 - **[Nose](https://nose.readthedocs.org/en/latest/)**
 - **[Pymongo](http://api.mongodb.org/python/current/)**

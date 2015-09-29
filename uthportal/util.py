@@ -95,7 +95,7 @@ def get_soup(html):
     """ Returns the BeautifulSoup object from the html """
     bsoup = None
     try:
-        bsoup = BeautifulSoup(html)
+        bsoup = BeautifulSoup(html, 'html5lib')
     except Exception as e:
         #Find a solution for this
         print('Error while parsing html: %s' % e)
