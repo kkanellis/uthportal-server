@@ -31,6 +31,7 @@ class general(AnnouncementTask):
             left = article.find('div', class_='loop-entry-left')
             date_post = left.find('div', class_= 'post-meta').find('div', class_ = 'post-date')
             announcement['date'] = parse_greek_date( date_post.text )
+            announcement['has_time'] = False
 
             #get right part
             right = article.find('div', class_='loop-entry-right')
