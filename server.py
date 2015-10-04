@@ -356,12 +356,15 @@ def get_info(url):
     exclude_param = flask.request.args.get('exclude')
     exclude_fields = exclude_param.split(',') if exclude_param else [ ]
 
+    filter_param = flask.request.args.get('filter')
+    filter_fields = filter_param.split(',') if filter_param else [ ]
+
     document = None
     if url[-1] == '/': # List all children
         url_parts = url_parts[:-1] # Remove last empty entry
         collection = '.'.join(url_parts)
 
-        children = get_children(collection, exclude_fields)
+        children = get_children(collection, exclude_fields, filter_fields)
 
         document = None
         if children:
@@ -378,7 +381,7 @@ def get_info(url):
 
         if key in query_type:
             query = { query_type[key] : id }
-            document = get_document(collection, query, exclude_fields)
+            document = get_document(collection, query, exclude_fields, filter_fields)
 
     if isinstance(document, dict):
         return flask.jsonify( document )
@@ -386,18 +389,23 @@ def get_info(url):
         flask.abort(HTTPCODE_NOT_FOUND)
 
 
-def get_document(collection, query, exclude_keys):
+def get_document(collection, query, exclude_keys, filter_keys):
     """
     Return the first document that matches the query from the given collection
     """
     document = db_manager.find_document( db_collection(collection), query=query)
+    if filter_keys:
+        document = { key: document[key] for key in filter_keys if key in document }
     return remove_keys(document, exclude_keys) if document else None
 
-def get_children(collection, exclude_keys):
+def get_children(collection, exclude_keys, filter_keys):
     """
     Returns all the children that a collection contains
     """
     documents = db_manager.find_documents( db_collection(collection) )
+    if filter_keys:
+        documents = [ { key: document[key] for key in filter_keys if key in document }
+                        for document in documents ]
     return [ remove_keys(document, exclude_keys) for document in documents if document ]
 
 def remove_keys(document, keys):
